@@ -14,14 +14,18 @@
 ## 🚀 프로젝트
 
 - 업무 자동화로 정성, 정량적 데이터를 분석해 프로젝트들의 팀을 짜주는 서비스 기획
-- To be continue
+- To be continued
 
 
 ## 📚 교육
 
-- 재무 회계학과 전공
-- AICPA 1과목 앞두고 있는 상황
-- AI 컨설턴트 과정 수료 중
+- University of Warwick Bsc Accounting & Finance (재무 회계학과) 전공
+- KPMG Future Academy AI 컨설턴트 과정 수료 중
+- AICPA (3과목 / 4과목)
+    ✅AUD (감사)
+    ✅ISC (IT 시스템 감사)
+    ✅REG (미국 세법)
+    🕐FAR (회계)
 
 ## 📞 연락처 
 - 이메일: [chanhopark9646@gmail.com](mailto:chanhopark9646@gmail.com) 
