@@ -169,3 +169,12 @@ FROM 주문
 WHERE 주문.고객번호 = 고객.고객번호
 ) AS 최종주문일
 FROM 고객;
+
+SELECT 사원번호
+, 이름
+, 상사번호
+, (SELECT 이름
+FROM 사원 AS 상사
+WHERE 상사.사원번호 = 사원.상사번호
+) AS 상사이름
+FROM 사원;
