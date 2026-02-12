@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>홈카페</title>
+
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      font-family: 'Segoe UI', sans-serif;
+      color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    section {
+      background: #1c1c1c;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      width: 400px;
+    }
+
+    h2 {
+      margin-top: 0;
+      letter-spacing: 2px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+
+    li {
+      padding: 6px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    li:last-child {
+      border-bottom: none;
+    }
+
+    img {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 20px;
+      transition: transform 0.4s ease;
+    }
+
+    img:hover {
+      transform: scale(1.05);
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 24px;
+      background-color: #c49b63;
+      color: #111;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #e6b980;
+      transform: translateY(-2px);
+    }
+
+    p {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #bbb;
+    }
+  </style>
+</head>
+
+<body>
+
+  <section>
+    <h2>HOME CAFE MENU</h2>
+
+    <ul>
+      <li>아메리카노</li>
+      <li>카페라떼</li>
+      <li>바닐라라떼</li>
+      <li>카푸치노</li>
+      <li>브루잉커피</li>
+    </ul>
+
+    <img src="image/vertical-shot-person-pouring-coffee-glass-black-background.jpg">
+
+    <button id="orderBtn">주문하기</button>
+
+    <p>어서오세요 ☕</p>
+  </section>
+
+  <!-- 스크립트 추가 -->
+  <script>
+    document
+      .getElementById("orderBtn")
+      .addEventListener("click", function () {
+        alert("주문 기능은 연습용입니다.");
+      });
+  </script>
+
+</body>
+</html>
