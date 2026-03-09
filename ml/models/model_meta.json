@@ -1,0 +1,46 @@
+{
+  "best_model_name": "HistGradientBoosting",
+  "categorical_cols": [
+    "SEX",
+    "EDUCATION",
+    "MARRIAGE"
+  ],
+  "log_transformed_cols": [
+    "BILL_AMT1",
+    "BILL_AMT2",
+    "BILL_AMT3",
+    "BILL_AMT4",
+    "BILL_AMT5",
+    "BILL_AMT6",
+    "PAY_AMT1",
+    "PAY_AMT2",
+    "PAY_AMT3",
+    "PAY_AMT4",
+    "PAY_AMT5",
+    "PAY_AMT6"
+  ],
+  "other_numeric_cols": [
+    "LIMIT_BAL",
+    "AGE",
+    "PAY_0",
+    "PAY_2",
+    "PAY_3",
+    "PAY_4",
+    "PAY_5",
+    "PAY_6"
+  ],
+  "test_metrics": {
+    "accuracy": 0.8156666666666667,
+    "precision": 0.646746347941567,
+    "recall": 0.36699321778447624,
+    "f1": 0.46826923076923077,
+    "roc_auc": 0.7773249975689684,
+    "pr_auc": 0.5551244679549934
+  },
+  "risk_thresholds": {
+    "안전": "< 0.3",
+    "주의": "0.3 ~ 0.5",
+    "경고": "0.5 ~ 0.7",
+    "위험": ">= 0.7"
+  }
+}
