@@ -1,0 +1,118 @@
+.main {
+    background: #f6f6f7;
+}
+
+.block-container {
+    max-width: 430px;
+    margin: 0 auto;
+    padding-top: 1.2rem;
+    padding-bottom: 2rem;
+}
+
+.mobile-shell {
+    background: #f6f6f7;
+    border-radius: 28px;
+    padding: 18px 16px 24px 16px;
+}
+
+.top-title {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.sub-text {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.step-text {
+    color: #f97316;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.35rem;
+}
+
+.progress-wrap {
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #f97316;
+    border-radius: 999px;
+}
+
+.info-card {
+    background: #fff7f1;
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 1rem;
+    border: 1px solid #fde7d8;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0.2rem 0 0.8rem 0;
+}
+
+.option-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.result-card {
+    background: #ffffff;
+    border: 1px solid #ececec;
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.result-card.recommend {
+    border: 2px solid #f97316;
+    background: #fffaf6;
+}
+
+.price-main {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #111827;
+}
+
+.price-sub {
+    color: #6b7280;
+    font-size: 0.92rem;
+}
+
+.badge-recommend {
+    display: inline-block;
+    background: #f97316;
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-bottom: 8px;
+}
+
+.bottom-bar {
+    position: sticky;
+    bottom: 0;
+    background: #f6f6f7;
+    padding-top: 10px;
+}
