@@ -1,0 +1,21 @@
+names:
+- '0'
+- '1'
+- '2'
+- '3'
+- '4'
+- '5'
+- '6'
+- '7'
+- '8'
+- '9'
+nc: 10
+roboflow:
+  license: MIT
+  project: mnist_numbers
+  url: https://universe.roboflow.com/jjuuus-workspace-qkfed/mnist_numbers/dataset/1
+  version: 1
+  workspace: jjuuus-workspace-qkfed
+test: ../test/images
+train: ../train/images
+val: ../valid/images
