@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Green Insight Dashboard</title>
+    <style>
+        :root {
+            --bg: #f6f0e1;
+            --bg-soft: #fbf8ef;
+            --panel: rgba(255, 252, 245, 0.88);
+            --panel-strong: #fffaf0;
+            --line: #d7ccb8;
+            --text: #203126;
+            --muted: #667565;
+            --green-900: #183a2a;
+            --green-800: #24533a;
+            --green-700: #2d6a44;
+            --green-600: #3b7f52;
+            --green-500: #58a36a;
+            --green-200: #c8dfc6;
+            --green-100: #deebda;
+            --shadow: 0 18px 40px rgba(35, 57, 43, 0.12);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(139, 180, 118, 0.20), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(56, 122, 82, 0.18), transparent 28%),
+                linear-gradient(135deg, #f7f0df 0%, #f2ead8 44%, #f6f2e9 100%);
+        }
+
+        .shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 28px auto;
+            padding: 28px;
+            border: 1px solid rgba(84, 119, 84, 0.14);
+            border-radius: 32px;
+            background: rgba(251, 248, 239, 0.76);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.45fr 0.95fr;
+            gap: 18px;
+            align-items: stretch;
+            margin-bottom: 20px;
+        }
+
+        .hero-card,
+        .metric,
+        .panel,
+        .result-card {
+            background: var(--panel);
+            border: 1px solid rgba(112, 140, 110, 0.15);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 10px 24px rgba(39, 62, 43, 0.08);
+        }
+
+        .hero-card {
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            inset: auto -80px -80px auto;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(91, 156, 104, 0.18), transparent 62%);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--green-100);
+            color: var(--green-800);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            margin: 18px 0 12px;
+            font-size: clamp(32px, 4vw, 48px);
+            line-height: 1.02;
+            letter-spacing: -0.03em;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 56ch;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .metric {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 150px;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            margin-top: 22px;
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--green-900);
+            letter-spacing: -0.03em;
+        }
+
+        .metric-note {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 0.95fr 1.35fr;
+            gap: 20px;
+        }
+
+        .panel {
+            padding: 24px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 22px;
+            color: var(--green-900);
+        }
+
+        .panel-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: #edf5ea;
+            color: var(--green-800);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--green-800);
+        }
+
+        .textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 18px 18px 20px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel-strong);
+            color: var(--text);
+            font: inherit;
+            font-size: 15px;
+            line-height: 1.7;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: var(--green-500);
+            box-shadow: 0 0 0 4px rgba(88, 163, 106, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: 14px 18px;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(48, 79, 56, 0.15);
+        }
+
+        .btn-primary {
+            color: #f7f4eb;
+            background: linear-gradient(135deg, var(--green-700), var(--green-500));
+        }
+
+        .btn-secondary {
+            color: var(--green-900);
+            background: linear-gradient(135deg, #e5efde, #d7e7d1);
+            border: 1px solid rgba(60, 103, 68, 0.10);
+        }
+
+        .helper {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .result-card {
+            padding: 18px;
+            background: linear-gradient(180deg, rgba(255, 251, 241, 0.96), rgba(242, 235, 219, 0.92));
+        }
+
+        .result-label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .result-value {
+            margin-top: 10px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--green-900);
+            letter-spacing: -0.03em;
+            word-break: break-word;
+        }
+
+        .result-box {
+            min-height: 175px;
+            padding: 20px;
+            border: 1px solid rgba(128, 147, 113, 0.18);
+            border-radius: 22px;
+            background:
+                linear-gradient(180deg, rgba(250, 246, 236, 0.98), rgba(243, 238, 225, 0.96));
+        }
+
+        .result-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 132px;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .result-lines {
+            display: grid;
+            gap: 12px;
+        }
+
+        .result-line {
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(117, 138, 111, 0.16);
+        }
+
+        .result-line:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .result-line strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--green-800);
+            font-size: 13px;
+        }
+
+        .result-line span {
+            color: var(--text);
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+        .fade-up {
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .delay-1 {
+            animation-delay: 0.08s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.16s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.24s;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .hero,
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .shell {
+                width: min(100% - 18px, 1000px);
+                margin: 10px auto;
+                padding: 16px;
+                border-radius: 24px;
+            }
+
+            .metrics,
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-card,
+            .panel,
+            .metric {
+                padding: 18px;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <article class="hero-card fade-up">
+                <span class="eyebrow">Green Insight</span>
+                <h1>초록 감성의 API 대시보드</h1>
+                <p>
+                    상품 조회와 문장 감성 분석을 한 화면에서 확인할 수 있도록 정리한 테스트용 대시보드입니다.
+                    미색 배경 위에 차분한 녹색 계열을 얹어 안정적인 분석 화면처럼 보이도록 구성했습니다.
+                </p>
+            </article>
+
+            <section class="metrics">
+                <article class="metric fade-up delay-1">
+                    <span class="metric-label">Endpoint</span>
+                    <div class="metric-value">2</div>
+                    <div class="metric-note">상품 정보 조회와 감성 분석 요청을 이 페이지에서 함께 테스트합니다.</div>
+                </article>
+                <article class="metric fade-up delay-2">
+                    <span class="metric-label">Theme</span>
+                    <div class="metric-value">Green</div>
+                    <div class="metric-note">초록색과 미색을 기반으로 한 부드러운 대시보드 톤입니다.</div>
+                </article>
+            </section>
+        </section>
+
+        <section class="dashboard">
+            <article class="panel fade-up delay-1">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">상품 정보 조회</h2>
+                        <p class="panel-subtitle">기존 `/items/5` 호출 예제는 그대로 유지했습니다.</p>
+                    </div>
+                    <span class="status-pill">GET /items/5</span>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-secondary" id="item-btn">상품 정보 가져오기</button>
+                </div>
+                <p class="helper">버튼을 누르면 상품 ID 5의 정보를 요청하고 아래 카드에 결과를 표시합니다.</p>
+
+                <div class="result-box" id="item-info">
+                    <div class="result-empty">아직 상품 정보를 불러오지 않았습니다.</div>
+                </div>
+            </article>
+
+            <article class="panel fade-up delay-2">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">문장 감성 분석</h2>
+                        <p class="panel-subtitle">텍스트를 입력하면 `/sentiment` API로 POST 요청을 보냅니다.</p>
+                    </div>
+                    <span class="status-pill">POST /sentiment</span>
+                </div>
+
+                <label class="field-label" for="text-input">분석할 문장</label>
+                <textarea
+                    class="textarea"
+                    id="text-input"
+                    placeholder="예: 오늘 시장 분위기가 좋아 보여서 투자 심리가 개선되는 것 같아요."
+                ></textarea>
+
+                <div class="actions">
+                    <button class="btn btn-primary" id="analyze-btn">감성 분석하기</button>
+                </div>
+                <p class="helper">응답으로 받은 텍스트, 라벨, 점수를 아래 결과 카드에 정리해 보여줍니다.</p>
+
+                <section class="result-grid">
+                    <article class="result-card">
+                        <span class="result-label">Sentiment Label</span>
+                        <div class="result-value" id="label-card">대기 중</div>
+                    </article>
+                    <article class="result-card">
+                        <span class="result-label">Confidence Score</span>
+                        <div class="result-value" id="score-card">0.0000</div>
+                    </article>
+                </section>
+
+                <div class="result-box" id="result">
+                    <div class="result-empty">아직 분석 결과가 없습니다.</div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        const ITEM_API_URL = "http://127.0.0.1:8080/items/5";
+        const SENTIMENT_API_URL = "http://127.0.0.1:8080/sentiment";
+
+        const itemInfoBox = document.getElementById("item-info");
+        const resultBox = document.getElementById("result");
+        const labelCard = document.getElementById("label-card");
+        const scoreCard = document.getElementById("score-card");
+        const textInput = document.getElementById("text-input");
+
+        function renderItemState(message) {
+            itemInfoBox.innerHTML = `<div class="result-empty">${message}</div>`;
+        }
+
+        function renderItemInfo(data) {
+            itemInfoBox.innerHTML = `
+                <div class="result-lines">
+                    <div class="result-line">
+                        <strong>상품명</strong>
+                        <span>${data.name ?? "-"}</span>
+                    </div>
+                    <div class="result-line">
+                        <strong>상품 ID</strong>
+                        <span>${data.item_id ?? "-"}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSentimentState(message) {
+            resultBox.innerHTML = `<div class="result-empty">${message}</div>`;
+        }
+
+        function renderSentimentResult(data) {
+            labelCard.innerText = data.label ?? "-";
+            scoreCard.innerText = typeof data.score === "number" ? data.score.toFixed(4) : data.score ?? "-";
+
+            resultBox.innerHTML = `
+                <div class="result-lines">
+                    <div class="result-line">
+                        <strong>입력 문장</strong>
+                        <span>${data.text ?? "-"}</span>
+                    </div>
+                    <div class="result-line">
+                        <strong>감성 라벨</strong>
+                        <span>${data.label ?? "-"}</span>
+                    </div>
+                    <div class="result-line">
+                        <strong>신뢰도 점수</strong>
+                        <span>${typeof data.score === "number" ? data.score.toFixed(4) : data.score ?? "-"}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function getItemInfo() {
+            renderItemState("상품 정보를 불러오는 중입니다...");
+
+            try {
+                const response = await fetch(ITEM_API_URL);
+
+                if (!response.ok) {
+                    throw new Error("상품 정보를 가져오지 못했습니다.");
+                }
+
+                const data = await response.json();
+                renderItemInfo(data);
+            } catch (error) {
+                renderItemState(`오류가 발생했습니다: ${error.message}`);
+            }
+        }
+
+        async function analyzeSentiment() {
+            const text = textInput.value.trim();
+
+            if (!text) {
+                renderSentimentState("문장을 입력한 뒤 다시 시도해주세요.");
+                labelCard.innerText = "입력 필요";
+                scoreCard.innerText = "0.0000";
+                return;
+            }
+
+            renderSentimentState("감성 분석 중입니다...");
+            labelCard.innerText = "분석 중";
+            scoreCard.innerText = "....";
+
+            try {
+                const response = await fetch(SENTIMENT_API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error("서버 요청에 실패했습니다.");
+                }
+
+                const data = await response.json();
+                renderSentimentResult(data);
+            } catch (error) {
+                renderSentimentState(`오류가 발생했습니다: ${error.message}`);
+                labelCard.innerText = "오류";
+                scoreCard.innerText = "0.0000";
+            }
+        }
+
+        document.getElementById("item-btn").addEventListener("click", getItemInfo);
+        document.getElementById("analyze-btn").addEventListener("click", analyzeSentiment);
+
+        textInput.addEventListener("keydown", (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                analyzeSentiment();
+            }
+        });
+    </script>
+</body>
+</html>
