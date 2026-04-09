@@ -8,9 +8,8 @@ from dotenv import load_dotenv
 
 try:
     from meilisearch import Client
-except ImportError:  # pragma: no cover - dependency may be intentionally missing
+except ImportError:  # pragma: no cover
     Client = None  # type: ignore[assignment]
-
 
 
 def _load_env() -> None:
@@ -44,13 +43,11 @@ FALLBACK_STOCKS = [
 ]
 
 
-
 def _normalize_hit(hit: dict[str, Any]) -> dict[str, str]:
     symbol = str(hit.get("symbol") or hit.get("Symbol") or "").strip().upper()
     name = str(hit.get("name") or hit.get("Name") or "").strip()
     exchange = str(hit.get("exchange") or hit.get("Exchange") or "NASDAQ").strip()
     return {"symbol": symbol, "name": name, "exchange": exchange}
-
 
 
 def _fallback_search(query: str, limit: int) -> dict[str, Any]:
@@ -63,13 +60,12 @@ def _fallback_search(query: str, limit: int) -> dict[str, Any]:
     return {
         "hits": hits,
         "source": "fallback",
-        "message": "흥, Meilisearch 쪽이 잠깐 비틀거렸네. 그래도 멈출 생각은 없으니까 비상용 데모 데이터로 먼저 후보를 끌어왔어.",
+        "message": "Meilisearch 연결이 원활하지 않아 기본 후보 목록으로 대체했습니다.",
         "error_type": "fallback",
         "details": "",
         "index_name": DEFAULT_INDEX_NAME,
         "meili_url": DEFAULT_MEILI_URL,
     }
-
 
 
 def stock_search(query: str, limit: int = 10) -> dict[str, Any]:
@@ -78,7 +74,7 @@ def stock_search(query: str, limit: int = 10) -> dict[str, Any]:
         return {
             "hits": [],
             "source": "empty",
-            "message": "어이, 검색어부터 넣어. 종목도 안 던져주고 결론부터 바라면 곤란하거든.",
+            "message": "회사명 또는 티커를 입력해 주세요.",
             "error_type": "",
             "details": "",
             "index_name": DEFAULT_INDEX_NAME,
@@ -98,6 +94,7 @@ def stock_search(query: str, limit: int = 10) -> dict[str, Any]:
                 "matchingStrategy": "all",
             },
         )
+
         normalized_hits: list[dict[str, str]] = []
         seen: set[tuple[str, str]] = set()
         for raw_hit in result.get("hits", []):
@@ -110,27 +107,21 @@ def stock_search(query: str, limit: int = 10) -> dict[str, Any]:
         return {
             "hits": normalized_hits,
             "source": "meilisearch",
-            "message": f"좋아, Meilisearch 인덱스 `{DEFAULT_INDEX_NAME}`에서 후보를 깔끔하게 추렸어. 이제 고르기만 하면 돼.",
+            "message": f"Meilisearch 인덱스 `{DEFAULT_INDEX_NAME}`에서 검색 결과를 불러왔습니다.",
             "error_type": "",
             "details": "",
             "index_name": DEFAULT_INDEX_NAME,
             "meili_url": DEFAULT_MEILI_URL,
         }
-    except Exception as exc:  # pragma: no cover - depends on external server state
+    except Exception as exc:  # pragma: no cover
         fallback = _fallback_search(query, limit)
         error_text = str(exc)
         error_type = "connection_error"
         if "index_not_found" in error_text.lower():
             error_type = "index_not_found"
-            fallback["message"] = (
-                f"흥, `{DEFAULT_INDEX_NAME}` 인덱스가 아직 비어 있거나 안 만들어졌네. "
-                "그래서 우선은 내가 숨겨둔 데모 후보로 화면을 살려둘게."
-            )
+            fallback["message"] = f"Meilisearch 인덱스 `{DEFAULT_INDEX_NAME}`를 찾지 못해 기본 후보 목록으로 대체했습니다."
         else:
-            fallback["message"] = (
-                "Meilisearch 연결이 흔들렸어. 그래도 여기서 멈추면 재미없잖아. "
-                "일단 데모 데이터로 검색 후보를 이어서 보여줄게."
-            )
+            fallback["message"] = "검색 엔진 연결에 문제가 있어 기본 후보 목록으로 대체했습니다."
         fallback["error_type"] = error_type
         fallback["details"] = error_text
         return fallback

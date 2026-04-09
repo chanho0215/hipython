@@ -74,16 +74,12 @@ class Stock:
             ("fiftyTwoWeekHigh", _format_value(_safe_pick(info, "fiftyTwoWeekHigh"))),
             ("fiftyTwoWeekLow", _format_value(_safe_pick(info, "fiftyTwoWeekLow"))),
         ]
-        return pd.DataFrame(basic_rows, columns=["항목", "Value"])
+        return pd.DataFrame(basic_rows, columns=["field", "value"])
 
     def get_basic_info(self) -> str:
         return self.get_basic_info_frame().to_markdown(index=False)
 
-    def _select_rows(
-        self,
-        frame: pd.DataFrame | None,
-        labels: list[str],
-    ) -> pd.DataFrame:
+    def _select_rows(self, frame: pd.DataFrame | None, labels: list[str]) -> pd.DataFrame:
         if frame is None or frame.empty:
             return pd.DataFrame(columns=["데이터 없음"])
 
@@ -92,7 +88,7 @@ class Stock:
             return pd.DataFrame(columns=["데이터 없음"])
 
         selected = frame.loc[available].copy()
-        selected.index.name = "항목"
+        selected.index.name = "field"
         return _format_columns(selected)
 
     def get_financial_statement_frames(self) -> dict[str, pd.DataFrame]:
