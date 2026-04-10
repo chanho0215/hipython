@@ -6,7 +6,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from meilisearch import Client
 
-from event_briefing_service import CACHE_PATH, DEFAULT_COMPANY_INDEX, DEFAULT_MEILI_KEY, DEFAULT_MEILI_URL, download_corp_codes
+from event_briefing_service_refined import (
+    CACHE_PATH,
+    DEFAULT_COMPANY_INDEX,
+    DEFAULT_MEILI_KEY,
+    DEFAULT_MEILI_URL,
+    download_corp_codes,
+)
 
 
 def _load_env() -> None:
@@ -25,16 +31,18 @@ _load_env()
 
 def main() -> None:
     docs = download_corp_codes()
-    client = Client(os.getenv("MEILISEARCH_URL", DEFAULT_MEILI_URL), os.getenv("MEILISEARCH_MASTER_KEY", DEFAULT_MEILI_KEY))
-    index_name = os.getenv("MEILISEARCH_COMPANY_INDEX", DEFAULT_COMPANY_INDEX)
+    meili_key = os.getenv("MEILISEARCH_API_KEY") or os.getenv("MEILISEARCH_MASTER_KEY") or DEFAULT_MEILI_KEY
+    index_name = os.getenv("COMPANY_INDEX") or os.getenv("MEILISEARCH_COMPANY_INDEX") or DEFAULT_COMPANY_INDEX
+    client = Client(os.getenv("MEILISEARCH_URL", DEFAULT_MEILI_URL), meili_key)
     index = client.index(index_name)
     try:
+        # Rebuilding from scratch keeps stale company rows from hanging around after updates.
         index.delete_all_documents()
     except Exception:
         pass
     index.update_searchable_attributes(["corp_name", "stock_code", "corp_code"])
     index.update_filterable_attributes(["corp_cls", "stock_code"])
-    task = index.add_documents(docs, primary_key="id")
+    task = index.add_documents(docs, primary_key="corp_code")
     task_uid = getattr(task, "task_uid", None)
     if task_uid is None and isinstance(task, dict):
         task_uid = task.get("taskUid")

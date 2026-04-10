@@ -9,7 +9,8 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-from event_weekly_briefing_service_v4 import (
+# This Streamlit entrypoint is still handy for quick local checks beside the Next.js app.
+from event_weekly_briefing_service import (
     CACHE_PATH,
     DART_API_KEY,
     DEFAULT_COMPANY_INDEX,

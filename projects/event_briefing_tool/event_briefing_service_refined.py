@@ -54,7 +54,7 @@ class CompanyHit:
     corp_code: str
     corp_name: str
     stock_code: str
-    corp_cls: str
+    corp_cls: str = ""
     modify_date: str = ""
 
     @property
@@ -261,15 +261,14 @@ def download_corp_codes() -> list[dict[str, str]]:
         corp_cls = "Y" if stock_code else "E"
         documents.append(
             {
-                "id": corp_code,
                 "corp_code": corp_code,
                 "corp_name": corp_name,
                 "stock_code": stock_code,
                 "corp_cls": corp_cls,
-                "modify_date": modify_date,
             }
         )
-    CACHE_PATH.write_text(json.dumps(documents, ensure_ascii=False, indent=2), encoding="utf-8")
+    # Keep the cache compact so it can be uploaded to hosts with strict file-size limits.
+    CACHE_PATH.write_text(json.dumps(documents, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return documents
 
 
