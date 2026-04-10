@@ -26,6 +26,8 @@
 
 - `projects/car_price_app`
   - 중고차 가격 예측 Streamlit 앱
+- `projects/event_briefing_tool`
+  - 뉴스 공시 브리핑 서비스 
 - `projects/walmart_analysis_report`
   - Walmart 구매 패턴 분석 노트북과 보고서
 - `projects/streamlit_exam`
