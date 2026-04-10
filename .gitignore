@@ -1,26 +1,51 @@
-# 가상 환경
-venv/
-.env/
-
-# 파이썬 컴파일 파일
-*.pyc
-__pycache__/
-
-# 데이터베이스
-db.sqlite3
-
-# 미디어 파일
-media/
-
-# 환경 변수 파일
+# Environment
 .env
+.env.*
+!.env.example
 
-# IDE 설정 파일
-.idea/
+# Editor / OS
 .vscode/
+.idea/
+.DS_Store
+Thumbs.db
 
-.ipynb_checkpoints/*
-esg_data_test.json
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
 
-data/
-llm/.langchain.db
+# Jupyter
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+**/.venv/
+**/venv/
+**/env/
+**/streamlit_env/
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+**/.langchain.db
+
+# Generated experiment outputs
+**/runs/
+**/labels.cache
+
+# Local-only assets and scratch outputs
+archive/local_assets/
+learning/data/
+learning/ml/data/
+learning/object_detection/data/
+projects/*/data/
+practice/*.jsonl
+practice/*.mwb
+
+# Legacy local folder left behind during reorganization
+llm/
