@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -75,10 +76,17 @@ FINANCIAL_LABELS = {
 }
 
 FINANCIAL_SECTION_LABELS = {
-    "Quarterly Income Statement": "분기 손익계산서",
-    "Quarterly Balance Sheet": "분기 재무상태표",
-    "Quarterly Cash Flow": "분기 현금흐름표",
+    "Quarterly Income Statement": "손익계산서",
+    "Quarterly Balance Sheet": "재무상태표",
+    "Quarterly Cash Flow": "현금흐름표",
 }
+
+STEP_META = [
+    ("search", "종목 검색"),
+    ("setup", "분석 설정"),
+    ("review", "데이터 검토"),
+    ("report", "보고서 생성"),
+]
 
 
 @dataclass(frozen=True)
@@ -125,94 +133,121 @@ def _apply_theme() -> None:
 
         .stApp {
             background:
-                radial-gradient(circle at top left, rgba(219, 234, 254, 0.65), transparent 28%),
-                radial-gradient(circle at top right, rgba(209, 250, 229, 0.55), transparent 22%),
-                linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+                radial-gradient(circle at top left, rgba(219, 234, 254, 0.55), transparent 24%),
+                radial-gradient(circle at top right, rgba(226, 232, 240, 0.72), transparent 28%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
         }
 
         [data-testid="stHeader"] {
             background: transparent;
         }
 
+        [data-testid="stSidebar"] {
+            background: rgba(248, 250, 252, 0.96);
+            border-right: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
         .block-container {
-            padding-top: 1.2rem;
+            max-width: 1220px;
+            padding-top: 1.05rem;
             padding-bottom: 2rem;
-            max-width: 1280px;
         }
 
-        .hero {
-            padding: 1.35rem 1.5rem;
-            border-radius: 24px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(241,245,249,0.94));
-            border: 1px solid rgba(148, 163, 184, 0.24);
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-            margin-bottom: 1rem;
+        h1, h2, h3 {
+            letter-spacing: -0.02em;
         }
 
-        .hero-title {
-            font-size: 2rem;
+        [data-testid="stMetricValue"] {
+            font-size: 1.05rem;
+        }
+
+        .hero-shell {
+            padding: 1.35rem 1.45rem;
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.95));
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.05);
+            margin-bottom: 0.9rem;
+        }
+
+        .hero-kicker {
+            color: #2563eb;
+            font-size: 0.78rem;
             font-weight: 700;
-            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             margin-bottom: 0.35rem;
         }
 
+        .hero-title {
+            color: #0f172a;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
         .hero-copy {
-            color: #334155;
-            line-height: 1.7;
+            color: #475569;
             font-size: 0.98rem;
+            line-height: 1.7;
         }
 
-        .panel {
-            padding: 1rem 1.1rem;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-            margin-bottom: 1rem;
-        }
-
-        .panel-title {
-            font-size: 1.02rem;
+        .page-title {
+            font-size: 1.35rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 0.4rem;
-        }
-
-        .panel-copy {
-            color: #475569;
-            font-size: 0.93rem;
-            line-height: 1.65;
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.7rem;
-            margin-top: 0.85rem;
-        }
-
-        .stat-card {
-            border-radius: 16px;
-            padding: 0.9rem 1rem;
-            background: #f8fafc;
-            border: 1px solid rgba(148, 163, 184, 0.18);
-        }
-
-        .stat-label {
-            color: #64748b;
-            font-size: 0.78rem;
             margin-bottom: 0.2rem;
         }
 
-        .stat-value {
-            color: #0f172a;
-            font-size: 1rem;
-            font-weight: 700;
-            line-height: 1.35;
+        .page-copy {
+            color: #475569;
+            line-height: 1.65;
+            font-size: 0.95rem;
+            margin-bottom: 0.95rem;
         }
 
-        .section-spacer {
-            height: 0.2rem;
+        .soft-note {
+            color: #64748b;
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+
+        .report-shell {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(148,163,184,0.16);
+            border-radius: 20px;
+            padding: 1.1rem 1.2rem;
+        }
+
+        .report-shell h1 {
+            font-size: 1.55rem;
+            margin-top: 0.1rem;
+            margin-bottom: 0.8rem;
+            color: #0f172a;
+        }
+
+        .report-shell h2 {
+            font-size: 1.08rem;
+            margin-top: 1.1rem;
+            margin-bottom: 0.45rem;
+            color: #111827;
+        }
+
+        .report-shell h3 {
+            font-size: 0.98rem;
+            margin-top: 0.9rem;
+            margin-bottom: 0.35rem;
+            color: #1f2937;
+        }
+
+        .report-shell p, .report-shell li {
+            color: #1f2937;
+            line-height: 1.8;
+            font-size: 0.96rem;
+        }
+
+        .report-shell ul, .report-shell ol {
+            padding-left: 1.2rem;
         }
         </style>
         """,
@@ -222,6 +257,7 @@ def _apply_theme() -> None:
 
 def _init_state() -> None:
     defaults: dict[str, Any] = {
+        "step": "search",
         "search_query": "Apple",
         "search_hits": [],
         "search_feedback": None,
@@ -233,8 +269,11 @@ def _init_state() -> None:
         "basic_info_markdown": "",
         "financial_markdown": "",
         "status": STATUS_PRESETS["처음 보는 종목"],
+        "status_choice": "처음 보는 종목",
         "goal": GOAL_PRESETS["매수 판단"],
+        "goal_choice": "매수 판단",
         "question": QUESTION_PRESETS["강점과 약점"],
+        "question_choice": "강점과 약점",
         "latest_report": None,
         "latest_report_symbol": None,
     }
@@ -242,21 +281,55 @@ def _init_state() -> None:
         st.session_state.setdefault(key, value)
 
 
-def _select_preset(label: str, options: dict[str, str], key: str, custom_label: str) -> str:
+def _step_index(step: str | None = None) -> int:
+    current = step or st.session_state.get("step", "search")
+    return [key for key, _ in STEP_META].index(current)
+
+
+def _go_to(step: str) -> None:
+    st.session_state["step"] = step
+
+
+def _go_next() -> None:
+    idx = _step_index()
+    if idx < len(STEP_META) - 1:
+        st.session_state["step"] = STEP_META[idx + 1][0]
+
+
+def _go_prev() -> None:
+    idx = _step_index()
+    if idx > 0:
+        st.session_state["step"] = STEP_META[idx - 1][0]
+
+
+def _selected_ready() -> bool:
+    return bool(st.session_state.get("selected_symbol"))
+
+
+def _select_preset(label: str, options: dict[str, str], key: str) -> str:
+    option_names = list(options.keys())
     choice_key = f"{key}_choice"
-    current_value = st.session_state.get(key, "")
-    matched_choice = next((name for name, text in options.items() if text == current_value and text), custom_label)
-    current_choice = st.session_state.get(choice_key, matched_choice)
-    selected_choice = st.selectbox(label, list(options.keys()), index=list(options.keys()).index(current_choice))
-    if selected_choice == custom_label:
+    current_choice = st.session_state.get(choice_key, option_names[0])
+    if current_choice not in option_names:
+        current_choice = option_names[0]
+
+    selected_choice = st.selectbox(
+        label,
+        option_names,
+        index=option_names.index(current_choice),
+        key=f"widget_{choice_key}",
+    )
+
+    if selected_choice == "직접 입력":
         value = st.text_area(
             f"{label} 직접 입력",
-            value=current_value if current_choice == custom_label else "",
-            height=90,
-            key=f"{key}_text",
+            value=st.session_state.get(key, ""),
+            height=100,
+            key=f"widget_{key}_text",
         )
     else:
         value = options[selected_choice]
+
     st.session_state[choice_key] = selected_choice
     st.session_state[key] = value
     return value
@@ -285,6 +358,13 @@ def _financials_to_markdown(financial_frames: dict[str, Any]) -> str:
         label = FINANCIAL_SECTION_LABELS.get(title, title)
         sections.append(f"### {label}\n{translated.to_markdown()}")
     return "\n\n".join(sections)
+
+
+def _clean_report(report: str) -> str:
+    cleaned = (report or "").strip()
+    cleaned = re.sub(r"^```(?:markdown|md)?\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+    return cleaned.strip()
 
 
 def _reset_selection() -> None:
@@ -364,11 +444,12 @@ def _feedback_message(feedback: dict[str, Any] | None) -> tuple[str, str]:
 def _render_header() -> None:
     st.markdown(
         """
-        <div class="hero">
+        <div class="hero-shell">
+            <div class="hero-kicker">Investment Workflow</div>
             <div class="hero-title">투자 보고서 작성 시스템</div>
             <div class="hero-copy">
-                종목 검색, 기본 재무 데이터 확인, AI 기반 투자 보고서 생성을 하나의 화면에서 처리합니다.
-                Meilisearch로 후보를 찾고, yfinance로 데이터를 읽고, OpenAI 모델로 보고서를 정리합니다.
+                종목 검색, 분석 목적 설정, 데이터 검토, 보고서 생성까지 필요한 흐름을 단계별로 분리했습니다.
+                한 번에 모든 것을 보여주기보다 현재 단계에 집중할 수 있게 구성한 화면입니다.
             </div>
         </div>
         """,
@@ -376,160 +457,248 @@ def _render_header() -> None:
     )
 
 
-def _render_overview() -> None:
+def _render_progress() -> None:
+    current_idx = _step_index()
+    cols = st.columns(4)
+    for idx, (_, label) in enumerate(STEP_META):
+        status = "대기"
+        delta = None
+        if idx < current_idx:
+            status = "완료"
+        elif idx == current_idx:
+            status = "진행 중"
+            delta = "현재 단계"
+        with cols[idx]:
+            with st.container(border=True):
+                st.caption(f"STEP {idx + 1}")
+                st.markdown(f"**{label}**")
+                st.metric("상태", status, delta=delta, label_visibility="collapsed")
+
+
+def _render_summary() -> None:
     selected_name = st.session_state.get("selected_name") or "선택 전"
     selected_symbol = st.session_state.get("selected_symbol") or "-"
+    hit_count = len(st.session_state.get("search_hits", []))
+    report_status = "완료" if st.session_state.get("latest_report") else "대기"
     feedback = st.session_state.get("search_feedback") or {}
     search_source = feedback.get("source", "대기")
-    hit_count = len(st.session_state.get("search_hits", []))
 
-    st.markdown(
-        f"""
-        <div class="panel">
-            <div class="panel-title">현재 작업 상태</div>
-            <div class="panel-copy">검색부터 보고서 생성까지 필요한 핵심 상태를 한눈에 확인할 수 있습니다.</div>
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div class="stat-label">선택 종목</div>
-                    <div class="stat-value">{selected_name}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">티커</div>
-                    <div class="stat-value">{selected_symbol}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">검색 결과 수</div>
-                    <div class="stat-value">{hit_count}개 / {search_source}</div>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    cols = st.columns(4)
+    items = [
+        ("선택 종목", selected_name),
+        ("티커", selected_symbol),
+        ("검색 결과", f"{hit_count}개 / {search_source}"),
+        ("보고서 상태", report_status),
+    ]
+    for col, (label, value) in zip(cols, items):
+        with col:
+            with st.container(border=True):
+                st.caption(label)
+                st.markdown(f"**{value}**")
+
+
+def _render_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("### 진행 단계")
+        for key, label in STEP_META:
+            button_type = "primary" if st.session_state.get("step") == key else "secondary"
+            if st.button(f"{_step_index(key) + 1}. {label}", key=f"nav_{key}", use_container_width=True, type=button_type):
+                _go_to(key)
+
+        st.markdown("---")
+        st.markdown("### 현재 선택")
+        st.write(f"**종목**: {st.session_state.get('selected_name') or '선택 전'}")
+        st.write(f"**티커**: {st.session_state.get('selected_symbol') or '-'}")
+        st.write(f"**거래소**: {st.session_state.get('selected_exchange') or '-'}")
+
+        st.markdown("---")
+        if st.button("전체 초기화", use_container_width=True):
+            keep = {
+                "search_query": "Apple",
+                "status": STATUS_PRESETS["처음 보는 종목"],
+                "status_choice": "처음 보는 종목",
+                "goal": GOAL_PRESETS["매수 판단"],
+                "goal_choice": "매수 판단",
+                "question": QUESTION_PRESETS["강점과 약점"],
+                "question_choice": "강점과 약점",
+                "step": "search",
+            }
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            for key, value in keep.items():
+                st.session_state[key] = value
+            st.rerun()
+
+
+def _page_heading(title: str, copy: str) -> None:
+    st.markdown(f"<div class='page-title'>{title}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='page-copy'>{copy}</div>", unsafe_allow_html=True)
+
+
+def _render_search_page() -> None:
+    _page_heading(
+        "종목 검색",
+        "회사명이나 티커를 입력해 후보를 찾고, 검토할 종목을 선택합니다.",
     )
 
+    with st.container(border=True):
+        query = st.text_input(
+            "회사명 또는 티커",
+            value=st.session_state.get("search_query", "Apple"),
+            placeholder="예: Apple, AAPL, NVIDIA, Palantir",
+        )
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("검색 실행", use_container_width=True, type="primary"):
+                _perform_search(query)
+        with c2:
+            if st.button("선택 초기화", use_container_width=True):
+                _reset_selection()
 
-def _render_search_section() -> None:
-    st.subheader("1. 종목 검색")
-    query = st.text_input(
-        "회사명 또는 티커",
-        value=st.session_state.get("search_query", "Apple"),
-        placeholder="예: Apple, AAPL, NVIDIA, Palantir",
-    )
-    search_col, clear_col = st.columns([1, 1])
-    with search_col:
-        if st.button("검색 실행", use_container_width=True):
-            _perform_search(query)
-    with clear_col:
-        if st.button("선택 초기화", use_container_width=True):
-            _reset_selection()
-
-    level, message = _feedback_message(st.session_state.get("search_feedback"))
-    getattr(st, level)(message)
+        level, message = _feedback_message(st.session_state.get("search_feedback"))
+        getattr(st, level)(message)
 
     hits: list[SearchResult] = st.session_state.get("search_hits", [])
-    if not hits:
+    if hits:
+        with st.container(border=True):
+            st.markdown("#### 검색 결과")
+            hit_frame = pd.DataFrame(
+                [{"티커": hit.symbol, "기업명": hit.name, "거래소": hit.exchange} for hit in hits]
+            )
+            st.dataframe(hit_frame, use_container_width=True, hide_index=True)
+
+            labels = [hit.label for hit in hits]
+            current_symbol = st.session_state.get("selected_symbol")
+            default_index = next((idx for idx, hit in enumerate(hits) if hit.symbol == current_symbol), 0)
+            selected_label = st.selectbox("후보 선택", labels, index=default_index)
+            selected_hit = hits[labels.index(selected_label)]
+
+            if st.button("이 종목으로 진행", use_container_width=True, type="primary"):
+                try:
+                    with st.spinner("기본 정보와 분기 재무 데이터를 불러오는 중입니다..."):
+                        _load_stock_data(selected_hit.symbol, selected_hit.name, selected_hit.exchange)
+                    st.success(f"{selected_hit.name} ({selected_hit.symbol}) 데이터를 불러왔습니다.")
+                    _go_to("setup")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"종목 데이터를 불러오는 중 오류가 발생했습니다: {exc}")
+
+    _render_step_footer(show_prev=False, next_label="다음 단계", next_disabled=not _selected_ready())
+
+
+def _render_setup_page() -> None:
+    _page_heading(
+        "분석 설정",
+        "현재 검토 상황, 보고서 목표, 중점 질문을 설정합니다. 직접 입력으로 목적을 세밀하게 조정할 수도 있습니다.",
+    )
+
+    if not _selected_ready():
+        st.warning("먼저 종목을 선택해 주세요.")
+        _render_step_footer(show_prev=True, next_label="다음 단계", next_disabled=True)
         return
 
-    hit_frame = pd.DataFrame(
-        [{"티커": hit.symbol, "기업명": hit.name, "거래소": hit.exchange} for hit in hits]
+    with st.container(border=True):
+        left, right = st.columns(2)
+        with left:
+            _select_preset("현재 검토 상황", STATUS_PRESETS, "status")
+            _select_preset("보고서 목표", GOAL_PRESETS, "goal")
+        with right:
+            _select_preset("중점 질문", QUESTION_PRESETS, "question")
+            st.text_area(
+                "사용 데이터 범위",
+                value="최근 분기 재무 흐름과 기본 기업 정보를 기준으로 정리",
+                height=100,
+                disabled=True,
+            )
+
+    _render_step_footer(show_prev=True, next_label="다음 단계", next_disabled=False)
+
+
+def _render_review_page() -> None:
+    _page_heading(
+        "데이터 검토",
+        "기본 정보와 최근 분기 재무 데이터를 먼저 확인한 뒤, 보고서 생성 여부를 결정합니다.",
     )
-    st.dataframe(hit_frame, use_container_width=True, hide_index=True)
 
-    labels = [hit.label for hit in hits]
-    current_symbol = st.session_state.get("selected_symbol")
-    default_index = next((idx for idx, hit in enumerate(hits) if hit.symbol == current_symbol), 0)
-    selected_label = st.selectbox("후보 선택", labels, index=default_index)
-    selected_hit = hits[labels.index(selected_label)]
-
-    if st.button("선택 종목 데이터 불러오기", type="primary", use_container_width=True):
-        try:
-            with st.spinner("기본 정보와 분기 재무 데이터를 불러오는 중입니다..."):
-                _load_stock_data(selected_hit.symbol, selected_hit.name, selected_hit.exchange)
-            st.success(f"{selected_hit.name}({selected_hit.symbol}) 데이터를 불러왔습니다.")
-        except Exception as exc:
-            st.error(f"종목 데이터를 불러오는 중 오류가 발생했습니다: {exc}")
-
-
-def _render_prompt_section() -> None:
-    st.subheader("2. 보고서 목적 설정")
-    left, right = st.columns(2)
-    with left:
-        _select_preset("현재 검토 상황", STATUS_PRESETS, "status", "직접 입력")
-        _select_preset("보고서 목표", GOAL_PRESETS, "goal", "직접 입력")
-    with right:
-        _select_preset("중점 질문", QUESTION_PRESETS, "question", "직접 입력")
-        st.text_area(
-            "사용할 데이터 범위 메모",
-            value="최근 분기 재무 흐름과 기본 기업 정보를 바탕으로 정리",
-            height=90,
-            disabled=True,
-            help="현재 버전에서는 yfinance 기반 기본 정보와 최근 분기 재무 데이터를 사용합니다.",
-        )
-
-
-def _render_data_section() -> None:
     basic_frame: pd.DataFrame | None = st.session_state.get("basic_frame")
     financial_frames: dict[str, pd.DataFrame] = st.session_state.get("financial_frames") or {}
 
-    st.subheader("3. 데이터 검토")
     if basic_frame is None:
-        st.info("검색 결과에서 종목을 선택하고 데이터를 먼저 불러와 주세요.")
+        st.warning("먼저 검색 단계에서 종목 데이터를 불러와 주세요.")
+        _render_step_footer(show_prev=True, next_label="다음 단계", next_disabled=True)
         return
 
-    selected_name = st.session_state.get("selected_name")
-    selected_symbol = st.session_state.get("selected_symbol")
-    selected_exchange = st.session_state.get("selected_exchange")
-    st.caption(f"{selected_name} ({selected_symbol}) · {selected_exchange}")
+    st.caption(
+        f"{st.session_state.get('selected_name')} ({st.session_state.get('selected_symbol')}) · {st.session_state.get('selected_exchange')}"
+    )
 
-    basic_col, financial_col = st.columns([1, 1.25])
-    with basic_col:
-        st.markdown("**기본 정보**")
+    tabs = st.tabs(["기본 정보", "손익계산서", "재무상태표", "현금흐름표"])
+    with tabs[0]:
         st.dataframe(basic_frame, use_container_width=True, hide_index=True)
 
-    with financial_col:
-        st.markdown("**분기 재무 데이터**")
-        for title, frame in financial_frames.items():
-            st.markdown(f"**{title}**")
-            st.dataframe(frame, use_container_width=True)
+    section_lookup = {
+        "손익계산서": "Quarterly Income Statement",
+        "재무상태표": "Quarterly Balance Sheet",
+        "현금흐름표": "Quarterly Cash Flow",
+    }
+    for tab, section_name in zip(tabs[1:], list(section_lookup.keys())):
+        with tab:
+            frame = financial_frames.get(section_lookup[section_name])
+            if frame is None or frame.empty:
+                st.info("데이터가 없습니다.")
+            else:
+                st.dataframe(frame, use_container_width=True)
+
+    st.markdown(
+        "<div class='soft-note'>원천 데이터 제공 범위에 따라 일부 항목이 비어 있거나 표시되지 않을 수 있습니다.</div>",
+        unsafe_allow_html=True,
+    )
+
+    _render_step_footer(show_prev=True, next_label="다음 단계", next_disabled=False)
 
 
-def _render_report_section() -> None:
-    st.subheader("4. 투자 보고서 생성")
-    selected_symbol = st.session_state.get("selected_symbol")
-    selected_name = st.session_state.get("selected_name")
+def _render_report_page() -> None:
+    _page_heading(
+        "보고서 생성",
+        "설정한 목적과 질문을 기준으로 AI 투자 보고서를 생성합니다. 결과는 화면에서 읽거나 마크다운 파일로 저장할 수 있습니다.",
+    )
 
-    if not selected_symbol:
-        st.info("먼저 종목을 선택하고 데이터를 불러와 주세요.")
+    if not _selected_ready():
+        st.warning("먼저 종목을 선택하고 데이터를 불러와 주세요.")
+        _render_step_footer(show_prev=True, show_next=False)
         return
 
-    generate_col, reset_col = st.columns([1, 1])
-    with generate_col:
+    c1, c2 = st.columns(2)
+    with c1:
         if st.button("AI 투자 보고서 생성", type="primary", use_container_width=True):
             try:
                 with st.spinner("투자 보고서를 생성하는 중입니다..."):
                     report = investment_report(
-                        company=selected_name,
-                        symbol=selected_symbol,
+                        company=st.session_state["selected_name"],
+                        symbol=st.session_state["selected_symbol"],
                         basic_info=st.session_state["basic_info_markdown"],
                         financials=st.session_state["financial_markdown"],
                         status=st.session_state["status"],
                         goal=st.session_state["goal"],
                         question=st.session_state["question"],
                     )
-                st.session_state["latest_report"] = report
-                st.session_state["latest_report_symbol"] = selected_symbol
+                cleaned = _clean_report(report)
+                st.session_state["latest_report"] = cleaned
+                st.session_state["latest_report_symbol"] = st.session_state["selected_symbol"]
                 st.success("보고서 생성을 완료했습니다.")
             except Exception as exc:
                 st.error(f"보고서 생성 중 오류가 발생했습니다: {exc}")
-
-    with reset_col:
-        if st.button("보고서만 초기화", use_container_width=True):
+    with c2:
+        if st.button("보고서 초기화", use_container_width=True):
             st.session_state["latest_report"] = None
             st.session_state["latest_report_symbol"] = None
+            st.rerun()
 
     report = st.session_state.get("latest_report")
     if report:
+        st.markdown("<div class='report-shell'>", unsafe_allow_html=True)
         st.markdown(report)
+        st.markdown("</div>", unsafe_allow_html=True)
         st.download_button(
             "보고서 다운로드 (.md)",
             data=report.encode("utf-8"),
@@ -537,23 +706,54 @@ def _render_report_section() -> None:
             mime="text/markdown",
             use_container_width=True,
         )
+    else:
+        st.info("아직 생성된 보고서가 없습니다.")
+
+    _render_step_footer(show_prev=True, show_next=False)
+
+
+def _render_step_footer(
+    *,
+    show_prev: bool = True,
+    show_next: bool = True,
+    next_label: str = "다음 단계",
+    next_disabled: bool = False,
+) -> None:
+    st.write("")
+    cols = st.columns([1, 1, 4])
+    with cols[0]:
+        if show_prev and st.button("이전", use_container_width=True, key=f"prev_{st.session_state.get('step')}"):
+            _go_prev()
+            st.rerun()
+    with cols[1]:
+        if show_next and st.button(
+            next_label,
+            use_container_width=True,
+            disabled=next_disabled,
+            key=f"next_{st.session_state.get('step')}",
+        ):
+            _go_next()
+            st.rerun()
 
 
 def main() -> None:
     _apply_theme()
     _init_state()
+    _render_sidebar()
     _render_header()
-    _render_overview()
+    _render_progress()
+    _render_summary()
+    st.write("")
 
-    left, right = st.columns([1, 1.25], gap="large")
-    with left:
-        _render_search_section()
-        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
-        _render_prompt_section()
-    with right:
-        _render_data_section()
-        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
-        _render_report_section()
+    step = st.session_state.get("step", "search")
+    if step == "search":
+        _render_search_page()
+    elif step == "setup":
+        _render_setup_page()
+    elif step == "review":
+        _render_review_page()
+    elif step == "report":
+        _render_report_page()
 
 
 if __name__ == "__main__":
