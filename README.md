@@ -63,7 +63,3 @@
 - Notion 회고록: [astonishing-fortnight-f7d.notion.site/KPMG-Future-Academy-2cc04161026e80ea8e5ce53cb46f15fa?source=copy_link](https://astonishing-fortnight-f7d.notion.site/KPMG-Future-Academy-2cc04161026e80ea8e5ce53cb46f15fa?source=copy_link)
 - LinkedIn: [linkedin.com/in/chanho-park-a273621b7](http://linkedin.com/in/chanho-park-a273621b7)
 
-## Notes
-
-- 가상환경, 캐시, 체크포인트, 실행 산출물, 로컬 데이터는 `.gitignore`로 분리했습니다.
-- 학습용 원본은 최대한 보존하면서 루트 폴더만 깔끔하게 보이도록 재배치했습니다.
