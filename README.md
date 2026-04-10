@@ -21,8 +21,6 @@
   - Python 기초, SQL, Pandas, ML, LLM, FastAPI, Computer Vision, Deep Learning 정리
 - `practice/`
   - 연습문제, 스크래치 파일, 실험 산출물
-- `archive/`
-  - 현재 포트폴리오 메인 흐름에서는 제외한 로컬 자산 및 이전 버전 보관용
 
 ## Highlighted Work
 
