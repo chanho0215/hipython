@@ -6,22 +6,92 @@ const DART_API_KEY = process.env.DART_API_KEY || ""
 const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || ""
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || ""
 
+const NAVER_QUERY_TEMPLATES = [
+  `"{company_name}" {stock_code}`,
+  `"{company_name}" {stock_code} 공시`,
+  `"{company_name}" {stock_code} 실적`,
+  `"{company_name}" 공시`,
+  `"{company_name}" 실적`,
+  `"{company_name}" 주가`,
+  `"{company_name}" {month_token}`,
+  `"{company_name}" {year_month_token}`,
+  `"{company_name}"`,
+  `{company_name}`,
+]
+
+const NAVER_PAGE_SIZE = 100
+const NAVER_MAX_PAGES_PER_QUERY = 10
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0")
+}
+
 function weekDateRange(year: number, month: number, weekNo: number) {
   const startDay = (weekNo - 1) * 7 + 1
   const daysInMonth = new Date(year, month, 0).getDate()
   const endDay = Math.min(startDay + 6, daysInMonth)
-  const pad = (n: number) => String(n).padStart(2, "0")
+
   return {
-    start: `${year}-${pad(month)}-${pad(startDay)}`,
-    end: `${year}-${pad(month)}-${pad(endDay)}`,
+    start: `${year}-${pad2(month)}-${pad2(startDay)}`,
+    end: `${year}-${pad2(month)}-${pad2(endDay)}`,
   }
 }
 
 function weekLabel(year: number, month: number, weekNo: number) {
-  const start = (weekNo - 1) * 7 + 1
-  const daysInMonth = new Date(year, month, 0).getDate()
-  const end = Math.min(start + 6, daysInMonth)
-  return `${year}년 ${month}월 ${weekNo}주 (${month}/${start}~${month}/${end})`
+  return `${year}년 ${month}월 ${weekNo}주차`
+}
+
+function stripHtml(text: string) {
+  return (text || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim()
+}
+
+function parseNaverDate(pubDate: string) {
+  const date = new Date(pubDate)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function isWithinInclusive(target: Date, start: Date, end: Date) {
+  return target.getTime() >= start.getTime() && target.getTime() <= end.getTime()
+}
+
+function fillTemplate(
+  template: string,
+  {
+    companyName,
+    stockCode,
+    year,
+    month,
+  }: {
+    companyName: string
+    stockCode: string
+    year: number
+    month: number
+  }
+) {
+  return template
+    .replaceAll("{company_name}", companyName)
+    .replaceAll("{stock_code}", stockCode || "")
+    .replaceAll("{month_token}", `${month}월`)
+    .replaceAll("{year_month_token}", `${year}년 ${month}월`)
+    .replaceAll("{year}", String(year))
+    .replaceAll("{month}", String(month))
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function buildNewsQueries(companyName: string, stockCode: string, year: number, month: number) {
+  const queries = NAVER_QUERY_TEMPLATES.map((template) =>
+    fillTemplate(template, { companyName, stockCode, year, month })
+  ).filter(Boolean)
+
+  return Array.from(new Set(queries))
 }
 
 async function fetchDartDisclosures(
@@ -31,6 +101,7 @@ async function fetchDartDisclosures(
   limit: number
 ): Promise<EventItem[]> {
   if (!DART_API_KEY) return []
+
   try {
     const params = new URLSearchParams({
       crtfc_key: DART_API_KEY,
@@ -38,13 +109,21 @@ async function fetchDartDisclosures(
       bgn_de: startDate.replace(/-/g, ""),
       end_de: endDate.replace(/-/g, ""),
       page_count: String(limit),
+      sort: "date",
+      sort_mth: "desc",
+      last_reprt_at: "Y",
     })
+
     const res = await fetch(`https://opendart.fss.or.kr/api/list.json?${params}`, {
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
+      cache: "no-store",
     })
+
     if (!res.ok) return []
+
     const data = await res.json()
     if (data.status !== "000") return []
+
     return (data.list || []).slice(0, limit).map((item: Record<string, string>) => ({
       source: "DART",
       category: item.pblntf_detail_ty || item.pblntf_ty || "공시",
@@ -62,38 +141,23 @@ async function fetchDartDisclosures(
   }
 }
 
-function stripHtml(text: string) {
-  return text.replace(/<[^>]+>/g, "").replace(/&quot;/g, '"').replace(/&amp;/g, "&")
-}
-
-function buildNewsQueries(companyName: string, stockCode: string) {
-  const queries = [
-    companyName,
-    `"${companyName}"`,
-    `"${companyName}" 공시`,
-    `"${companyName}" 실적`,
-  ]
-
-  if (stockCode) {
-    queries.push(`"${companyName}" ${stockCode}`)
-    queries.push(`${companyName} ${stockCode}`)
-  }
-
-  return Array.from(new Set(queries.map((query) => query.trim()).filter(Boolean)))
-}
-
 async function fetchNaverNews(
   companyName: string,
   stockCode: string,
+  year: number,
+  month: number,
   startDate: string,
   endDate: string,
   limit: number
 ): Promise<{ items: EventItem[]; debug: Record<string, unknown> }> {
+  const debugQueries: string[] = []
+  const debugErrors: string[] = []
+
   const debug: Record<string, unknown> = {
     enabled: Boolean(NAVER_CLIENT_ID && NAVER_CLIENT_SECRET),
     warning: "",
-    queries: [],
-    errors: [],
+    queries: debugQueries,
+    errors: debugErrors,
     matched: 0,
   }
 
@@ -102,50 +166,71 @@ async function fetchNaverNews(
     return { items: [], debug }
   }
 
-  try {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    end.setDate(end.getDate() + 1)
-    const seen = new Set<string>()
-    const collected: EventItem[] = []
+  const start = new Date(`${startDate}T00:00:00+09:00`)
+  const end = new Date(`${endDate}T23:59:59+09:00`)
 
-    for (const queryText of buildNewsQueries(companyName, stockCode)) {
-      const query = encodeURIComponent(queryText)
+  const seen = new Set<string>()
+  const collected: EventItem[] = []
+
+  const queries = buildNewsQueries(companyName, stockCode, year, month)
+
+  outer: for (const queryText of queries) {
+    let addedForQuery = 0
+    let oldestPubDate = ""
+    let apiTotal = 0
+
+    for (let page = 1; page <= NAVER_MAX_PAGES_PER_QUERY; page++) {
+      const startParam = (page - 1) * NAVER_PAGE_SIZE + 1
+      if (startParam > 1000) break
+
       try {
-        const res = await fetch(
-          `https://openapi.naver.com/v1/search/news.json?query=${query}&display=${Math.min(
-            Math.max(limit * 2, 20),
-            100
-          )}&sort=date`,
-          {
-            headers: {
-              "X-Naver-Client-Id": NAVER_CLIENT_ID,
-              "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
-            },
-            signal: AbortSignal.timeout(8000),
-          }
-        )
+        const params = new URLSearchParams({
+          query: queryText,
+          display: String(NAVER_PAGE_SIZE),
+          start: String(startParam),
+          sort: "date",
+        })
+
+        const res = await fetch(`https://openapi.naver.com/v1/search/news.json?${params.toString()}`, {
+          headers: {
+            "X-Naver-Client-Id": NAVER_CLIENT_ID,
+            "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+          },
+          signal: AbortSignal.timeout(10000),
+          cache: "no-store",
+        })
 
         if (!res.ok) {
           const body = await res.text()
-          ;(debug.errors as unknown[]).push({
-            query: queryText,
-            status: res.status,
-            body: body.slice(0, 300),
-          })
-          continue
+          debugErrors.push(`[${queryText}] page=${page} status=${res.status} body=${body.slice(0, 150)}`)
+          break
         }
 
         const data = await res.json()
-        ;(debug.queries as unknown[]).push({ query: queryText, total: (data.items || []).length })
+        const items = Array.isArray(data.items) ? data.items : []
+        apiTotal = Number(data.total || 0)
 
-        for (const item of data.items || []) {
-          const pubDate = new Date(item.pubDate)
-          if (Number.isNaN(pubDate.getTime()) || pubDate < start || pubDate > end) continue
+        if (!items.length) break
+
+        for (const item of items) {
+          const pubDate = parseNaverDate(item.pubDate)
+          if (!pubDate) continue
+
+          oldestPubDate = pubDate.toISOString().slice(0, 10)
+
+          if (pubDate < start) {
+            continue
+          }
+
+          if (!isWithinInclusive(pubDate, start, end)) {
+            continue
+          }
 
           const title = stripHtml(item.title || "")
+          const snippet = stripHtml(item.description || "")
           const key = `${pubDate.toISOString().slice(0, 10)}::${title}`
-          if (seen.has(key)) continue
+
+          if (!title || seen.has(key)) continue
 
           seen.add(key)
           collected.push({
@@ -153,74 +238,93 @@ async function fetchNaverNews(
             category: "뉴스",
             occurred_at: pubDate.toISOString().slice(0, 10),
             title,
-            snippet: stripHtml(item.description || ""),
+            snippet,
             url: item.originallink || item.link,
           })
+          addedForQuery += 1
 
-          if (collected.length >= limit) break
+          if (collected.length >= limit) {
+            debugQueries.push(
+              `${queryText} | total=${apiTotal} | added=${addedForQuery} | oldest=${oldestPubDate || "-"} | stop=limit`
+            )
+            break outer
+          }
         }
 
-        if (collected.length >= limit) break
+        const lastItem = items[items.length - 1]
+        const lastPubDate = parseNaverDate(lastItem?.pubDate || "")
+        if (lastPubDate && lastPubDate < start) {
+          break
+        }
       } catch (error) {
-        ;(debug.errors as unknown[]).push({
-          query: queryText,
-          error: error instanceof Error ? error.message : "unknown error",
-        })
+        debugErrors.push(
+          `[${queryText}] page=${page} error=${error instanceof Error ? error.message : "unknown error"}`
+        )
+        break
       }
     }
 
-    debug.matched = collected.length
-    if (collected.length === 0 && !(debug.errors as unknown[]).length) {
-      debug.warning = "뉴스 API 호출은 성공했지만 선택한 기간에 맞는 뉴스가 없었습니다."
-    }
+    debugQueries.push(
+      `${queryText} | total=${apiTotal} | added=${addedForQuery} | oldest=${oldestPubDate || "-"}`
+    )
+  }
 
-    return { items: collected, debug }
-  } catch (error) {
-    debug.warning = error instanceof Error ? error.message : "뉴스 수집 중 알 수 없는 오류가 발생했습니다."
-    return { items: [], debug }
+  debug.matched = collected.length
+
+  if (collected.length === 0 && debugErrors.length === 0) {
+    debug.warning = "뉴스 API 호출은 성공했지만 선택한 주차에 맞는 뉴스가 없었습니다."
+  }
+
+  return {
+    items: collected
+      .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))
+      .slice(0, limit),
+    debug,
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { corp_code, corp_name, stock_code, year, month, week_no, disclosure_limit = 40, news_limit = 30 } = body
+    const {
+      corp_code,
+      corp_name,
+      stock_code,
+      year,
+      month,
+      week_no,
+      disclosure_limit = 40,
+      news_limit = 30,
+    } = body
 
-    if (!corp_code || !corp_name) {
-      return NextResponse.json({ error: "corp_code와 corp_name은 필수입니다." }, { status: 400 })
+    if (!corp_code || !corp_name || !year || !month || !week_no) {
+      return NextResponse.json(
+        { error: "corp_code, corp_name, year, month, week_no는 필수입니다." },
+        { status: 400 }
+      )
     }
 
-    // If an external Python service is configured, proxy to it
-    if (PYTHON_SERVICE_URL) {
-      try {
-        const res = await fetch(`${PYTHON_SERVICE_URL}/load-events`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(30000),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          return NextResponse.json(data)
-        }
-      } catch {
-        // Fall through to direct fetch
-      }
-    }
-
-    const { start, end } = weekDateRange(year, month, week_no)
-    const wLabel = weekLabel(year, month, week_no)
+    const { start, end } = weekDateRange(Number(year), Number(month), Number(week_no))
+    const wLabel = weekLabel(Number(year), Number(month), Number(week_no))
 
     const [disclosures, newsResult] = await Promise.all([
-      fetchDartDisclosures(corp_code, start, end, disclosure_limit),
-      fetchNaverNews(corp_name, stock_code, start, end, news_limit),
+      fetchDartDisclosures(corp_code, start, end, Number(disclosure_limit)),
+      fetchNaverNews(
+        corp_name,
+        stock_code || "",
+        Number(year),
+        Number(month),
+        start,
+        end,
+        Number(news_limit)
+      ),
     ])
+
     const news = newsResult.items
 
-    const all: EventItem[] = [
-      ...disclosures.map((d) => ({ ...d })),
-      ...news.map((n) => ({ ...n })),
-    ].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))
+    const all: EventItem[] = [...disclosures, ...news].sort((a, b) =>
+      b.occurred_at.localeCompare(a.occurred_at)
+    )
 
     const bundle: WeeklyBundle = {
       all,

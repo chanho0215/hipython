@@ -15,7 +15,6 @@ const DEMO_HITS = [
 ]
 
 const MEILI_URL = process.env.MEILISEARCH_URL || process.env.DEFAULT_MEILI_URL || "http://localhost:7700"
-// Support both the current Next.js env names and the older Python tooling names.
 const MEILI_KEY = process.env.MEILISEARCH_API_KEY || process.env.MEILISEARCH_MASTER_KEY || ""
 const COMPANY_INDEX = process.env.COMPANY_INDEX || process.env.MEILISEARCH_COMPANY_INDEX || "kr_companies"
 
@@ -39,7 +38,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ hits: data.hits || [], source: "meilisearch" })
     }
   } catch {
-    // When search is unavailable, keep the UI usable with a tiny built-in company list.
+    // Fall through to demo data
   }
 
   // Filter demo data by query
