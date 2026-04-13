@@ -1,48 +1,43 @@
 # event_briefing_tool
 
-국내 상장사 공시와 뉴스를 모아 주간 브리핑을 만드는 프로젝트입니다.
+상장사 공시와 뉴스를 모아 주간 브리핑을 만드는 프로젝트입니다.
 
-지금 기준의 메인 앱은 `Next.js` 버전입니다. v0/Vercel 쪽에서 만든 웹 앱은 루트에 두고, 예전 Python/Streamlit 코드는 `python_tools/` 아래로 분리해 두었습니다.
+지금 기준으로는 `Next.js` 웹 앱이 메인이고, 예전 Python 수집 도구와 Streamlit 확인용 화면은 `python_tools/` 아래로 분리해 두었습니다.
 
 운영 주소:
 
 - `https://v0-stock-briefing-app.vercel.app/`
 
-## 현재 구조
+## 폴더 한눈에 보기
 
-- `app/`, `components/`, `hooks/`, `lib/`
-  웹 앱 본체. v0/Vercel 기준으로 보는 쪽은 여기입니다.
-- `app/api/*`
-  회사 검색, 이벤트 로드, 브리핑 생성 API
-- `python_tools/`
-  Python 수집/가공 로직, Streamlit 보조 앱, Meilisearch 인덱싱 스크립트
-- `.env.example`
-  로컬 실행용 환경변수 예시
-
-## 빠른 시작
-
-### 1. 저장소 준비
-
-```bash
-git clone <your-repo-url>
-cd event_briefing_tool
+```text
+event_briefing_tool/
+├─ app/                 Next.js 화면과 API 라우트
+├─ components/          화면 컴포넌트와 공용 UI
+├─ hooks/               프론트 보조 훅
+├─ lib/                 타입, 날짜 계산, 공용 유틸
+├─ public/              아이콘 같은 정적 파일
+├─ python_tools/        Python 수집 도구와 Meilisearch 적재 스크립트
+├─ styles/              레거시 스타일 파일 보관용 폴더
+├─ .env.example         환경 변수 예시
+├─ package.json         웹 앱 의존성과 실행 스크립트
+└─ README.md            전체 안내
 ```
 
-### 2. 환경변수 준비
+각 주요 폴더 안에도 짧은 `README.md`를 넣어 두어서, 처음 볼 때 어디부터 읽으면 되는지 바로 감이 오게 해 두었습니다.
 
-`.env.example`을 복사해서 `.env`를 만들고 값을 채웁니다.
+## 어떤 흐름으로 돌아가나
 
-```bash
-cp .env.example .env
-```
+1. 브라우저에서 회사를 검색합니다.
+2. `app/api/search-companies`가 Meilisearch에서 회사를 찾습니다.
+3. 회사를 고르면 `app/api/load-events`가 공시와 뉴스를 묶어 가져옵니다.
+4. `app/api/generate-briefing`이 최종 브리핑 텍스트를 만듭니다.
 
-Windows PowerShell이라면:
+Python 쪽은 웹 앱과 별개로, 회사 목록을 Meilisearch에 넣거나 예전 수집 흐름을 확인할 때 사용합니다.
 
-```powershell
-Copy-Item .env.example .env
-```
+## 빠르게 실행하기
 
-### 3. 웹 앱 실행
+### 웹 앱 실행
 
 ```bash
 corepack pnpm install --config.node-linker=hoisted
@@ -51,9 +46,42 @@ corepack pnpm dev
 
 브라우저에서 `http://localhost:3000`을 열면 됩니다.
 
-## 환경변수
+빌드 확인:
 
-기본적으로 아래 값들이 필요합니다.
+```bash
+npx next build
+```
+
+### Python 도구 실행
+
+먼저 의존성을 설치합니다.
+
+```bash
+python -m pip install -r python_tools/requirements.txt
+```
+
+자주 쓰는 명령:
+
+```bash
+python python_tools/bootstrap_kr_companies_meili.py
+streamlit run python_tools/app.py
+```
+
+## 환경 변수
+
+`.env.example`를 복사해서 `.env`를 만든 뒤 값을 채우면 됩니다.
+
+```bash
+cp .env.example .env
+```
+
+PowerShell에서는:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+기본 예시는 아래와 같습니다.
 
 ```bash
 OPENAI_API_KEY=
@@ -61,7 +89,6 @@ OPENAI_MODEL=gpt-4o
 OPENAI_TEMPERATURE=0.3
 
 DART_API_KEY=
-
 NAVER_CLIENT_ID=
 NAVER_CLIENT_SECRET=
 
@@ -77,79 +104,23 @@ PYTHON_SERVICE_URL=
 
 메모:
 
-- 앱 검색 API는 `MEILISEARCH_API_KEY`를 우선 읽습니다.
-- 인덱스 적재 스크립트는 `MEILISEARCH_MASTER_KEY`가 필요합니다.
-- 인덱스 이름은 `kr_companies`로 맞춰 두는 편이 편합니다.
+- 웹 앱 검색 API는 보통 `MEILISEARCH_API_KEY`를 사용합니다.
+- Meilisearch 인덱스를 넣는 스크립트는 `MEILISEARCH_MASTER_KEY`가 필요합니다.
 - `DART_LISTED_ONLY=true`면 티커가 있는 종목만 인덱싱합니다.
-- `PYTHON_SERVICE_URL`을 쓰면 Next API가 외부 Python 서비스로 먼저 프록시합니다.
+- `PYTHON_SERVICE_URL`이 있으면 Next API가 먼저 Python 서비스로 요청을 넘깁니다.
 
-## 웹 앱 메모
+## Vercel 기준 메모
 
-이 프로젝트에서 보통 먼저 확인하는 쪽은 웹 앱입니다.
+이 프로젝트는 `Vercel + Meilisearch Cloud` 조합을 기준으로 맞춰져 있습니다.
 
-프로덕션 빌드 확인:
-
-```bash
-npx next build
-```
-
-Vercel에 올릴 때는 루트 디렉터리를 이 프로젝트 폴더로 잡으면 됩니다.  
-루트에 있는 `app/`, `components/`, `hooks/`, `lib/`, `package.json`이 웹 앱 기준 파일입니다.
-
-## Python 보조 도구
-
-Python 쪽 파일도 같이 쓰려면 의존성을 먼저 설치합니다.
-
-```bash
-python -m pip install -r python_tools/requirements.txt
-```
-
-권장 패키지:
-
-- `streamlit`
-- `pandas`
-- `requests`
-- `python-dotenv`
-- `langchain-core`
-- `langchain-openai`
-- `meilisearch`
-
-## Meilisearch 인덱싱
-
-Cloud를 쓰는 경우:
-
-1. `.env`의 `MEILISEARCH_URL`을 Cloud URL로 설정
-2. `.env`의 `MEILISEARCH_MASTER_KEY`에 Cloud Admin/Master key 입력
-3. 아래 스크립트 실행
-
-```bash
-python python_tools/bootstrap_kr_companies_meili.py
-```
-
-이 스크립트는 DART 회사 목록을 읽어 `corp_code`를 primary key로 사용해 인덱스를 채웁니다.
-
-## Streamlit 보조 앱
-
-Next.js 앱과 별개로 Streamlit 화면이 필요하면 아래 명령으로 띄울 수 있습니다.
-
-```bash
-streamlit run python_tools/app.py
-```
-
-주로 데이터 수집 로직 확인이나 간단한 로컬 실험용으로 쓰는 편이 낫습니다.
-
-## 배포 메모
-
-현재는 `Vercel + Meilisearch Cloud` 조합을 기준으로 보고 있습니다.
-
-- `Vercel`
-  Next.js 앱과 `app/api/*`
-- `Meilisearch Cloud`
+- Vercel
+  Next.js 화면과 `app/api/*`
+- Meilisearch Cloud
   회사 검색 인덱스
-- `OpenAI / DART / Naver`
-  Vercel 환경변수로 연결
+- OpenAI / DART / Naver
+  Vercel 환경 변수로 연결
 
-Vercel 환경변수에는 보통 아래 값들을 넣습니다.
+Vercel에 넣는 값은 보통 아래 정도면 됩니다.
 
 ```bash
 OPENAI_API_KEY=
@@ -162,4 +133,19 @@ MEILISEARCH_COMPANY_INDEX=kr_companies
 COMPANY_INDEX=kr_companies
 ```
 
-회사 검색 인덱스를 새로 만들 때 primary key는 `corp_code`로 잡으면 됩니다.
+## Meilisearch 인덱싱
+
+Cloud를 쓴다면 `.env`에 Cloud URL과 Admin 또는 Master key를 넣은 뒤 아래 명령을 실행하면 됩니다.
+
+```bash
+python python_tools/bootstrap_kr_companies_meili.py
+```
+
+이 스크립트는 DART 회사 목록을 읽어서 `corp_code`를 primary key로 `kr_companies` 인덱스를 채웁니다.
+
+## 어디부터 보면 좋은지
+
+- 화면 흐름부터 보고 싶다면 `app/page.tsx`, `components/briefing/`
+- API 동작을 보고 싶다면 `app/api/`
+- Meilisearch 적재를 보고 싶다면 `python_tools/bootstrap_kr_companies_meili.py`
+- 예전 Python 로직까지 보고 싶다면 `python_tools/`
