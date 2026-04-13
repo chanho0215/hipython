@@ -1,0 +1,11 @@
+streamlit
+python-dotenv
+fastapi
+uvicorn
+langchain
+langchain-community
+langchain-openai
+langchain-text-splitters
+faiss-cpu
+pypdf
+rank-bm25

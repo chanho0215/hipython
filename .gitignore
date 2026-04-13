@@ -49,3 +49,6 @@ practice/*.mwb
 
 # Legacy local folder left behind during reorganization
 llm/
+!learning/llm/
+!learning/llm/*.ipynb
+

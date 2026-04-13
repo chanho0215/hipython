@@ -1,0 +1,613 @@
+:root {
+  /* 고객센터 톤에 맞춰 파란색과 흰색 대비를 더 강하게 준다. */
+  --bg: #edf3fb;
+  --bg-soft: #fbfdff;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface-strong: rgba(255, 255, 255, 0.98);
+  --line: rgba(3, 78, 162, 0.08);
+  --line-strong: rgba(3, 78, 162, 0.14);
+  --text: #11243b;
+  --muted: #617893;
+  --accent: #034ea2;
+  --accent-soft: #e8f1fc;
+  --assistant: #ffffff;
+  --user: #034ea2;
+  --user-text: #f8fbfc;
+  --error: #b42318;
+  --shadow: 0 14px 34px rgba(3, 42, 92, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(3, 78, 162, 0.12) 0, rgba(3, 78, 162, 0.03) 180px, transparent 300px),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.85), transparent 32%),
+    linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+  color: var(--text);
+  font-family: var(--font-body), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  background: transparent;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-topbar {
+  width: 100%;
+  background: linear-gradient(90deg, #034ea2 0%, #0d66c2 100%);
+  color: white;
+  box-shadow: 0 8px 22px rgba(3, 78, 162, 0.16);
+}
+
+.service-topbar__inner {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  min-height: 52px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.service-breadcrumb {
+  width: 100%;
+  border-bottom: 1px solid rgba(3, 78, 162, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.service-breadcrumb__inner {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  min-height: 44px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.service-breadcrumb__sep {
+  color: rgba(3, 78, 162, 0.46);
+}
+
+.chat-stage {
+  /* 하단 고정 입력창에 내용이 가리지 않도록 아래 패딩을 넉넉히 준다. */
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: 40px 24px 160px;
+  flex: 1;
+  transition: padding 260ms ease;
+}
+
+.chat-stage--intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-stage--thread {
+  display: block;
+}
+
+.intro-panel {
+  /* 첫 진입 화면은 대화가 없는 상태에서도 심심하지 않게
+     중앙 정렬 + 가벼운 등장 애니메이션만 준다. */
+  width: min(100%, 960px);
+  text-align: left;
+  animation: rise-in 420ms ease both;
+}
+
+.intro-hero {
+  padding: 34px 42px 18px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.64));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.intro-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 36px;
+  margin-bottom: 34px;
+}
+
+.intro-summary {
+  flex: 0 1 320px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-align: left;
+}
+
+.brand-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px 14px 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 246, 255, 0.96));
+  border: 1px solid rgba(3, 78, 162, 0.1);
+  box-shadow: 0 10px 24px rgba(16, 32, 49, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.brand-home:hover {
+  transform: translateY(-1px);
+  border-color: rgba(3, 78, 162, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 30px rgba(16, 32, 49, 0.08);
+}
+
+.brand-home--compact {
+  margin-bottom: 0;
+  padding: 10px 14px 10px 12px;
+  box-shadow: none;
+}
+
+.brand-home__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.brand-home__copy strong {
+  font-size: 0.95rem;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+.brand-home__copy span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.support-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  margin-bottom: 20px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-left: 2px;
+}
+
+.brand-home--compact .brand-home__copy strong {
+  font-size: 0.88rem;
+}
+
+.brand-home--compact .brand-home__copy span {
+  font-size: 0.76rem;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 154px;
+  height: 48px;
+  flex: 0 0 auto;
+}
+
+.brand-home--compact .brand-mark {
+  width: 132px;
+  height: 42px;
+}
+
+.brand-mark__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.intro-panel h1 {
+  font-size: clamp(2.1rem, 4vw, 3.25rem);
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  margin-bottom: 20px;
+  max-width: 760px;
+}
+
+.intro-copy {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.85;
+  margin-bottom: 34px;
+  max-width: 700px;
+}
+
+.status-card,
+.error-card {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.error-card {
+  color: var(--error);
+  justify-content: center;
+}
+
+.loader {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(3, 78, 162, 0.15);
+  border-top-color: var(--accent);
+  animation: spin 800ms linear infinite;
+}
+
+.hint-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+  align-items: stretch;
+}
+
+.hint-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 18px;
+  min-height: 118px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(3, 78, 162, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.hint-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(3, 78, 162, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(16, 32, 49, 0.05);
+}
+
+.hint-chip:last-child:nth-child(odd) {
+  grid-column: 1 / 2;
+  max-width: none;
+  justify-self: stretch;
+}
+
+.hint-chip__label {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.thread-panel {
+  animation: thread-in 260ms ease both;
+}
+
+.thread-head-card {
+  margin-bottom: 22px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.68));
+  border: 1px solid rgba(3, 78, 162, 0.08);
+}
+
+.thread-head {
+  /* 스레드가 길어져도 상단 문맥은 남아 있도록 얇은 sticky 헤더를 둔다. */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.thread-copy {
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: left;
+  max-width: 320px;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.message {
+  display: flex;
+  animation: rise-in 220ms ease both;
+}
+
+.message-card {
+  width: min(100%, 740px);
+}
+
+.message-bubble {
+  /* 답변은 문단형 텍스트가 많아서 pre-wrap과 keep-all 조합으로
+     줄바꿈은 유지하되 한글 단어가 과하게 끊기지 않게 한다. */
+  max-width: min(100%, 720px);
+  padding: 18px 20px;
+  border-radius: 20px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  box-shadow: 0 8px 20px rgba(16, 32, 49, 0.04);
+}
+
+.message--assistant .message-bubble {
+  background: var(--assistant);
+  border: 1px solid rgba(3, 78, 162, 0.08);
+}
+
+.message--user {
+  justify-content: flex-end;
+}
+
+.message-label {
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.message--user .message-bubble {
+  background: var(--user);
+  color: var(--user-text);
+}
+
+.message--user .message-label {
+  text-align: right;
+}
+
+.composer-shell {
+  /* 입력창은 항상 하단에 남겨두되,
+     배경 그라데이션으로 본문과 자연스럽게 분리한다. */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 22px 18px 26px;
+  background: linear-gradient(180deg, rgba(237, 243, 251, 0), rgba(237, 243, 251, 0.94) 30%, rgba(237, 243, 251, 1) 100%);
+  backdrop-filter: blur(14px);
+}
+
+.composer {
+  /* 모바일에서도 무너지지 않게 기본은 2열,
+     작은 화면에서는 아래 미디어쿼리에서 1열로 접는다. */
+  width: min(100%, 860px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--surface-strong);
+  border: 1px solid rgba(3, 78, 162, 0.12);
+  box-shadow: var(--shadow);
+}
+
+.composer-input {
+  resize: none;
+  min-height: 56px;
+  max-height: 180px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  line-height: 1.6;
+  padding: 8px 10px 8px 12px;
+}
+
+.composer-input::placeholder {
+  color: #8b9aad;
+}
+
+.composer-input:disabled {
+  cursor: not-allowed;
+}
+
+.composer-submit {
+  align-self: end;
+  min-width: 110px;
+  height: 46px;
+  border-radius: 12px;
+  padding: 0 18px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.composer-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(3, 78, 162, 0.2);
+}
+
+.composer-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes thread-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .intro-hero {
+    padding: 22px 18px 8px;
+    border-radius: 24px;
+  }
+
+  .intro-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .intro-summary {
+    text-align: left;
+    max-width: none;
+  }
+
+  .service-topbar__inner {
+    min-height: 56px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 10px 14px;
+    gap: 2px;
+    font-size: 0.82rem;
+  }
+
+  .service-breadcrumb__inner {
+    min-height: 40px;
+    padding: 0 14px;
+    gap: 8px;
+    font-size: 0.78rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .chat-stage {
+    padding: 22px 14px 142px;
+  }
+
+  .intro-panel h1 {
+    font-size: 2rem;
+  }
+
+  .composer {
+    grid-template-columns: 1fr;
+  }
+
+  .composer-submit {
+    width: 100%;
+  }
+
+  .message-bubble {
+    max-width: 100%;
+  }
+
+  .brand-home {
+    width: 100%;
+    justify-content: center;
+    border-radius: 16px;
+  }
+
+  .brand-home__copy {
+    align-items: center;
+    text-align: center;
+  }
+
+  .thread-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .thread-copy {
+    text-align: left;
+    max-width: none;
+  }
+
+  .hint-chip {
+    min-width: 100%;
+  }
+
+  .hint-list {
+    grid-template-columns: 1fr;
+  }
+
+  .hint-chip:last-child:nth-child(odd) {
+    max-width: none;
+    grid-column: auto;
+  }
+
+  .thread-head-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+}
