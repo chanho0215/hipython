@@ -56,6 +56,7 @@ function BriefingSection({ icon: Icon, title, items, accent = "default", classNa
   const styles = accentStyles[accent]
 
   return (
+    // 한 카드 안에서는 제목보다 항목 내용이 먼저 읽히도록 구조를 단순하게 유지한다.
     <div className={cn("bg-card border border-border rounded-lg p-5", className)}>
       <div className="flex items-center gap-2.5 mb-4">
         <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0", styles.iconBg)}>
@@ -93,6 +94,7 @@ function SplitSection({
   rightItems: string[]
 }) {
   return (
+    // 긍정/부담은 항상 같이 보게 두는 편이 회의용 화면에서 균형이 잘 잡힌다.
     <div className="bg-card border border-border rounded-lg p-5">
       <h3 className="text-sm font-semibold text-foreground mb-4">{title}</h3>
       <div className="grid grid-cols-2 gap-4">
@@ -149,6 +151,7 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
     setLoading(true)
     setError(null)
     try {
+      // 재생성은 현재 화면 데이터 그대로 다시 쓰므로 이전 단계로 돌아갈 필요가 없다.
       const res = await fetch("/api/generate-briefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,6 +181,7 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
 
   const handleDownload = () => {
     if (!latestMarkdown || !selectedCompany) return
+    // 다운로드는 별도 라이브러리 없이 브라우저 Blob으로 처리해 두는 편이 가볍다.
     const blob = new Blob([latestMarkdown], { type: "text/markdown;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -200,7 +204,7 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Header actions */}
+      {/* 상단 액션은 읽는 흐름을 끊지 않도록 재생성/다운로드만 남긴다. */}
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">주간 브리핑</h2>
@@ -238,14 +242,14 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
 
       {briefing ? (
         <div className="space-y-4">
-          {/* Hero summary card */}
+          {/* 브리핑 맨 위는 한 줄 요약이 먼저 보이도록 hero 카드로 묶는다. */}
           <div className="bg-primary rounded-xl px-6 py-5 text-primary-foreground">
             <div className="text-xs font-semibold uppercase tracking-widest opacity-60 mb-2">{wLabel}</div>
             <h3 className="text-xl font-bold leading-snug mb-2 text-balance">{briefing.title}</h3>
             <p className="text-sm leading-relaxed opacity-80">{briefing.one_line_summary}</p>
           </div>
 
-          {/* Key sections grid */}
+          {/* 핵심 섹션은 2열로 나눠도 의미가 흐트러지지 않게 짝을 맞췄다. */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <BriefingSection
               icon={Target}
@@ -269,7 +273,7 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
             />
           </div>
 
-          {/* Positives / Risks split */}
+          {/* 긍정과 부담은 비교해서 읽는 경우가 많아 한 카드 안에서 같이 보여 준다. */}
           <SplitSection
             title="긍정 요인 / 부담 요인"
             leftTitle="긍정 요인"
@@ -291,7 +295,7 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
             />
           </div>
 
-          {/* Disclaimer */}
+          {/* 안내 문구는 과하게 튀지 않게 맨 아래에만 둔다. */}
           <div className="px-4 py-3 bg-muted/40 border border-border rounded-lg text-xs text-muted-foreground leading-relaxed">
             본 브리핑은 AI가 공시·뉴스 데이터를 기반으로 자동 생성한 참고 자료입니다.
             투자 결정의 최종 책임은 투자자 본인에게 있으며, 전문가 자문을 병행하시기 바랍니다.
@@ -326,7 +330,7 @@ export function BriefingStep({ state, update, onPrev, onRestart }: Props) {
         </button>
       </div>
 
-      {/* 재생성 오버레이 */}
+      {/* 재생성 중에는 중복 클릭을 막기 위해 fixed 오버레이를 덮어 둔다. */}
       <LoadingOverlay
         show={loading}
         variant="fixed"

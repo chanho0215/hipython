@@ -45,6 +45,7 @@ OVERVIEW_LABELS = {
 
 
 def _load_env() -> None:
+    # Streamlit은 현재 작업 폴더가 바뀌는 경우가 있어서 .env 후보를 몇 군데 같이 본다.
     current = Path(__file__).resolve()
     for candidate in (current.parent / ".env", current.parent.parent / ".env", current.parent.parent.parent / ".env"):
         if candidate.exists():
@@ -57,6 +58,7 @@ st.set_page_config(page_title="주간 공시·뉴스 브리핑", page_icon="🗓
 
 
 def _apply_theme() -> None:
+    # 이 화면은 업무용 툴 성격이 강해서 기본 Streamlit 느낌을 최대한 걷어낸다.
     st.markdown(
         """
         <style>
@@ -126,6 +128,7 @@ def _apply_theme() -> None:
 
 
 def _init_state() -> None:
+    # 단계형 UI라 세션 상태 초기값을 여기서 한 번에 잡아 두는 편이 관리가 쉽다.
     defaults: dict[str, Any] = {
         "step": "search",
         "company_query": "삼성전자",
@@ -155,6 +158,7 @@ def _step_index(step: str | None = None) -> int:
 
 
 def _go_to(step: str) -> None:
+    # 이동 로직을 작은 함수로 빼 두면 버튼이 많아져도 흐름이 덜 흩어진다.
     st.session_state["step"] = step
 
 
@@ -188,6 +192,7 @@ def _current_period_key() -> tuple[int, int, int]:
 
 
 def _reset_company_dependent_state() -> None:
+    # 회사를 다시 고르면 이후 단계 데이터는 전부 무효가 되기 때문에 같이 비운다.
     st.session_state["company_overview"] = None
     st.session_state["weekly_bundle"] = {"all": [], "disclosures": [], "news": [], "news_debug": {}}
     st.session_state["latest_weekly_briefing"] = None
@@ -199,6 +204,7 @@ def _reset_company_dependent_state() -> None:
 
 
 def _perform_company_search() -> None:
+    # 검색 결과와 피드백 메시지를 같이 저장해 두면 화면에서는 그리기만 하면 된다.
     result = search_companies(st.session_state.get("company_query", ""))
     st.session_state["company_hits"] = [CompanyHit(**hit) for hit in result.get("hits", [])]
     st.session_state["company_feedback"] = result
@@ -214,6 +220,7 @@ def _load_weekly_events() -> None:
     if not company:
         raise RuntimeError("회사를 먼저 선택해 주세요.")
     year, month, week_no = _current_period_key()
+    # Streamlit 버전도 Next 버전과 같은 서비스 함수를 쓰도록 맞춰 두었다.
     bundle = fetch_company_events_for_month_week(
         corp_code=company.corp_code,
         company_name=company.corp_name,
@@ -228,6 +235,7 @@ def _load_weekly_events() -> None:
     st.session_state["week_load_attempted"] = True
     st.session_state["loaded_period_key"] = _current_period_key()
     try:
+        # 회사 개황은 보조 정보라 실패해도 이벤트 자체는 그대로 보여 준다.
         st.session_state["company_overview"] = fetch_company_overview(company.corp_code)
     except Exception:
         st.session_state["company_overview"] = None
@@ -242,6 +250,7 @@ def _generate_weekly_briefing() -> None:
         raise RuntimeError("회사를 먼저 선택해 주세요.")
     if not bundle.get("all"):
         raise RuntimeError("먼저 주간 이벤트를 불러와 주세요.")
+    # 이미 모은 데이터를 다시 써서 브리핑만 생성하므로 단계 전환이 빠르다.
     briefing = generate_weekly_briefing_structured(
         company_name=company.corp_name,
         stock_code=company.stock_code,
@@ -271,6 +280,7 @@ def _feedback_message() -> tuple[str, str]:
 
 
 def _render_header() -> None:
+    # 상단 히어로는 현재 단계보다 툴의 목적을 먼저 보여 주는 용도다.
     st.markdown(
         """
         <div class="hero">
@@ -283,6 +293,7 @@ def _render_header() -> None:
 
 
 def _render_progress() -> None:
+    # 진행 상태를 카드처럼 보여 주면 Streamlit에서도 단계형 UI 느낌이 살아난다.
     current_idx = _step_index()
     cols = st.columns(len(STEP_META))
     for idx, (_, label) in enumerate(STEP_META):
@@ -305,6 +316,7 @@ def _render_summary() -> None:
     company = _selected_company()
     bundle = _weekly_bundle()
     label = bundle.get("week_label") or week_label(*_current_period_key())
+    # 상단 요약 카드는 지금 선택된 맥락을 계속 붙잡아 주는 역할을 한다.
     cards = [
         ("회사", company.corp_name if company else "선택 전"),
         ("주차", label),
@@ -345,6 +357,7 @@ def _render_sidebar() -> None:
         st.caption(f"뉴스 API: {'설정됨' if (NAVER_CLIENT_ID and NAVER_CLIENT_SECRET) else '없음'}")
         st.markdown("---")
         if st.button("전체 초기화", use_container_width=True):
+            # 실험용 화면이라 완전 초기화 버튼을 두는 편이 다시 테스트하기 편하다.
             for key in [
                 "company_hits", "company_feedback", "selected_company", "company_overview",
                 "latest_weekly_briefing", "latest_weekly_markdown"
@@ -359,6 +372,7 @@ def _render_sidebar() -> None:
 
 
 def _event_card(item: EventItem) -> str:
+    # 리스트 성격의 화면은 HTML 카드로 찍는 편이 Streamlit 기본 컴포넌트보다 덜 산만하다.
     return (
         '<div class="event-card">'
         f'<div class="event-meta">{escape(item.source)} · {escape(item.category)} · {escape(item.occurred_at)}</div>'
@@ -387,6 +401,7 @@ def _render_company_search_page() -> None:
     if not hits:
         return
 
+    # 같은 검색을 다시 했을 때도 현재 선택 회사를 최대한 유지해 준다.
     labels = [hit.label for hit in hits]
     default_index = 0
     current_company = _selected_company()
@@ -427,6 +442,7 @@ def _render_company_overview() -> None:
 
 def _render_news_debug() -> None:
     debug = _weekly_bundle().get("news_debug", {}) or {}
+    # 뉴스가 비었을 때만 디버그를 열어 두면 평소 화면은 덜 복잡해진다.
     if not debug or debug.get("total_unique", 0) > 0:
         return
     if not (NAVER_CLIENT_ID and NAVER_CLIENT_SECRET):
@@ -483,6 +499,7 @@ def _render_week_selector_page() -> None:
             st.session_state["disclosure_limit"] = int(disclosure_limit)
             st.session_state["news_limit"] = int(news_limit)
             try:
+                # 이벤트 수집은 조금 걸릴 수 있어서 여기서만 명시적으로 spinner를 보여 준다.
                 with st.spinner("주간 이벤트를 불러오는 중입니다..."):
                     _load_weekly_events()
                 st.success("불러왔습니다.")
@@ -493,6 +510,7 @@ def _render_week_selector_page() -> None:
     loaded_key = st.session_state.get("loaded_period_key")
     bundle = _weekly_bundle()
     if loaded_key and loaded_key != current_key and bundle.get("all"):
+        # 이미 불러온 결과와 선택한 주차가 달라졌다는 걸 눈에 띄게 알려 준다.
         st.info("선택이 바뀌었습니다. 새 주차로 다시 불러오세요.")
 
     if st.session_state.get("week_load_attempted") and loaded_key == current_key and not bundle.get("all"):
@@ -528,6 +546,7 @@ def _render_week_selector_page() -> None:
                 st.error(f"브리핑 생성 중 오류가 발생했습니다: {exc}")
 
     tab1, tab2, tab3 = st.tabs(["전체", "공시", "뉴스"])
+    # 전체 / 공시 / 뉴스 탭은 브리핑 전에 원천 데이터를 훑어보는 용도다.
     for tab, items in zip([tab1, tab2, tab3], [bundle.get("all", []), bundle.get("disclosures", []), bundle.get("news", [])]):
         with tab:
             if items:
@@ -562,6 +581,7 @@ def _split_brief_card(title: str, left_title: str, left_items: list[str], right_
 
 
 def _render_weekly_briefing_cards(briefing: dict[str, Any]) -> None:
+    # 최종 브리핑은 카드 단위로 잘라서 회의 자료처럼 읽히게 배치한다.
     st.markdown(
         f"""
         <div class="brief-hero">
@@ -616,6 +636,7 @@ def _render_weekly_briefing_page() -> None:
 
     if st.session_state.get("generated_period_key") != _current_period_key() or not st.session_state.get("latest_weekly_briefing"):
         try:
+            # 주차가 바뀌었으면 이전 브리핑을 재활용하지 않고 다시 만든다.
             with st.spinner("브리핑을 준비하는 중입니다..."):
                 _generate_weekly_briefing()
         except Exception as exc:
@@ -643,6 +664,7 @@ def _render_weekly_briefing_page() -> None:
 
 
 def main() -> None:
+    # Streamlit은 매번 재실행되므로, 진입점에서 화면 전체 구성을 순서대로 다시 그린다.
     _apply_theme()
     _init_state()
     _render_sidebar()

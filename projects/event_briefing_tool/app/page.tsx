@@ -20,6 +20,7 @@ const EMPTY_BUNDLE: WeeklyBundle = {
 
 const now = new Date()
 
+// 화면을 새로고침해도 크게 당황하지 않도록 시작 상태를 한 곳에 모아 둔다.
 const INITIAL_STATE: AppState = {
   step: "welcome",
   companyQuery: "삼성전자",
@@ -42,10 +43,12 @@ const INITIAL_STATE: AppState = {
 export default function Home() {
   const [state, setState] = useState<AppState>(INITIAL_STATE)
 
+  // 각 단계 컴포넌트가 필요한 값만 부분적으로 바꿀 수 있게 얇은 업데이트 함수를 둔다.
   const update = useCallback((partial: Partial<AppState>) => {
     setState((prev) => ({ ...prev, ...partial }))
   }, [])
 
+  // 단계 이동은 단순하지만 여기로 모아 두면 화면 흐름을 따라가기 쉽다.
   const goTo = useCallback((step: AppState["step"]) => {
     setState((prev) => ({ ...prev, step }))
   }, [])

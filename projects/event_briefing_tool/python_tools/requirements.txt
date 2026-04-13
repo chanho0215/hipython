@@ -1,0 +1,7 @@
+streamlit
+pandas
+requests
+python-dotenv
+langchain-core
+langchain-openai
+meilisearch

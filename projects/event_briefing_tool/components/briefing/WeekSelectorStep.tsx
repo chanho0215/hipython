@@ -40,6 +40,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
 
   const validWeeks = validWeeksForMonth(formYear, formMonth)
 
+  // 이미 불러온 주차와 폼 값이 같은지 확인해 두면 버튼 상태를 다루기 편하다.
   const currentKey: [number, number, number] = [selectedYear, selectedMonth, selectedWeekNo]
   const loadedKey = state.loadedPeriodKey
   const isLoaded = loadedKey !== null &&
@@ -53,6 +54,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
     setLoading(true)
     setError(null)
     try {
+      // 이 단계에서는 선택한 주차를 서버에 그대로 넘기고, 응답이 오면 앱 전체 상태를 갱신한다.
       const res = await fetch("/api/load-events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,6 +97,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
     setGenLoading(true)
     setError(null)
     try {
+      // 브리핑 단계는 이미 모은 데이터를 다시 쓰므로, 재수집 없이 바로 생성 API만 친다.
       const res = await fetch("/api/generate-briefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,7 +156,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
         </p>
       </div>
 
-      {/* Period selector card */}
+      {/* 여기서 주차와 수집 범위를 같이 정한다. */}
       <div className="bg-card border border-border rounded-lg p-5 space-y-4">
         <div className="grid grid-cols-3 gap-3">
           {/* Year */}
@@ -213,7 +216,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
           </div>
         </div>
 
-        {/* Advanced options */}
+          {/* 공시/뉴스 건수는 종목별 편차가 커서 필요할 때만 접어 두는 편이 낫다. */}
         <div>
           <button
             type="button"
@@ -274,7 +277,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
         </div>
       )}
 
-      {/* Events display */}
+      {/* 한번 불러온 뒤에는 탭으로 공시와 뉴스를 나눠 본다. */}
       {isLoaded && hasEvents && (
         <div className="space-y-4">
           {/* Stats row */}
@@ -367,7 +370,7 @@ export function WeekSelectorStep({ state, update, onPrev, onNext }: Props) {
         </button>
       </div>
 
-      {/* 브리핑 생성 전체 화면 오버레이 */}
+      {/* 생성 중에는 화면 전체를 덮어서 중복 클릭을 막는다. */}
       <LoadingOverlay
         show={genLoading}
         variant="fixed"

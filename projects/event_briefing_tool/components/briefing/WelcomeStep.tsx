@@ -33,6 +33,7 @@ const BENEFITS = [
 
 export function WelcomeStep({ onStart }: Props) {
   return (
+    // 첫 화면은 기능 설명보다 "무슨 도구인지"와 "바로 시작 가능하다"는 점을 먼저 보여 준다.
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="max-w-2xl w-full text-center">
         {/* Hero */}
@@ -50,7 +51,7 @@ export function WelcomeStep({ onStart }: Props) {
           </p>
         </div>
 
-        {/* Features */}
+        {/* 기능 카드는 사용 흐름 순서와 최대한 비슷하게 배치했다. */}
         <div className="grid md:grid-cols-3 gap-4 mb-10">
           {FEATURES.map((feature) => (
             <div
@@ -66,7 +67,7 @@ export function WelcomeStep({ onStart }: Props) {
           ))}
         </div>
 
-        {/* Benefits */}
+        {/* 도구를 썼을 때 얻는 실익은 짧은 문장으로 별도 정리해 둔다. */}
         <div className="flex items-center justify-center gap-6 mb-10 flex-wrap">
           {BENEFITS.map((benefit) => (
             <div key={benefit.text} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -76,7 +77,7 @@ export function WelcomeStep({ onStart }: Props) {
           ))}
         </div>
 
-        {/* CTA */}
+        {/* 첫 액션은 하나만 남겨서 망설이는 지점을 줄인다. */}
         <Button size="lg" onClick={onStart} className="px-8 gap-2">
           시작하기
           <ArrowRight className="w-4 h-4" />

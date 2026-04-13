@@ -26,6 +26,7 @@ function pad2(n: number) {
   return String(n).padStart(2, "0")
 }
 
+// 주차 기준이 "달의 1~7일 / 8~14일 ..." 형태라서 화면과 API가 같은 계산을 쓰게 맞춘다.
 function weekDateRange(year: number, month: number, weekNo: number) {
   const startDay = (weekNo - 1) * 7 + 1
   const daysInMonth = new Date(year, month, 0).getDate()
@@ -41,6 +42,7 @@ function weekLabel(year: number, month: number, weekNo: number) {
   return `${year}년 ${month}월 ${weekNo}주차`
 }
 
+// 네이버 뉴스는 HTML 태그가 섞여 내려오므로 저장 전에 한번 정리한다.
 function stripHtml(text: string) {
   return (text || "")
     .replace(/<[^>]+>/g, "")
@@ -57,10 +59,12 @@ function parseNaverDate(pubDate: string) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+// 기사 날짜 필터는 inclusive로 두어 주차 마지막 날 기사도 빠지지 않게 한다.
 function isWithinInclusive(target: Date, start: Date, end: Date) {
   return target.getTime() >= start.getTime() && target.getTime() <= end.getTime()
 }
 
+// 쿼리 템플릿을 한 번 거쳐 두면 종목명/월/티커 조합을 여러 군데서 따로 만들 필요가 없다.
 function fillTemplate(
   template: string,
   {
@@ -91,6 +95,7 @@ function buildNewsQueries(companyName: string, stockCode: string, year: number, 
     fillTemplate(template, { companyName, stockCode, year, month })
   ).filter(Boolean)
 
+  // 중복 쿼리는 네이버 호출 횟수만 늘리기 때문에 여기서 바로 정리한다.
   return Array.from(new Set(queries))
 }
 
@@ -103,6 +108,7 @@ async function fetchDartDisclosures(
   if (!DART_API_KEY) return []
 
   try {
+    // 최근 공시를 주차 범위로 다시 한번 걸러 쓰기 때문에, 응답은 넉넉하게 받아 온다.
     const params = new URLSearchParams({
       crtfc_key: DART_API_KEY,
       corp_code: corpCode,
@@ -153,6 +159,7 @@ async function fetchNaverNews(
   const debugQueries: string[] = []
   const debugErrors: string[] = []
 
+  // 프론트에서 "왜 뉴스가 비었는지" 볼 수 있도록 디버그 정보를 같이 내려준다.
   const debug: Record<string, unknown> = {
     enabled: Boolean(NAVER_CLIENT_ID && NAVER_CLIENT_SECRET),
     warning: "",
@@ -172,6 +179,7 @@ async function fetchNaverNews(
   const seen = new Set<string>()
   const collected: EventItem[] = []
 
+  // 단일 회사명 쿼리만으로는 누락이 많아서, 종목코드/공시/실적 키워드를 같이 돈다.
   const queries = buildNewsQueries(companyName, stockCode, year, month)
 
   outer: for (const queryText of queries) {
@@ -230,6 +238,7 @@ async function fetchNaverNews(
           const snippet = stripHtml(item.description || "")
           const key = `${pubDate.toISOString().slice(0, 10)}::${title}`
 
+          // 같은 기사가 여러 쿼리에서 반복해서 잡히는 경우가 많아 날짜+제목 기준으로 묶는다.
           if (!title || seen.has(key)) continue
 
           seen.add(key)
@@ -253,6 +262,7 @@ async function fetchNaverNews(
 
         const lastItem = items[items.length - 1]
         const lastPubDate = parseNaverDate(lastItem?.pubDate || "")
+        // 날짜순 정렬이라 마지막 기사가 시작일보다 이전이면 더 뒤 페이지는 볼 필요가 없다.
         if (lastPubDate && lastPubDate < start) {
           break
         }
@@ -304,9 +314,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 외부 Python 서비스를 여전히 쓰고 싶을 때를 위해 프록시 경로는 남겨 둔다.
+    // 다만 지금 기본 운영은 Next API 단독 실행을 기준으로 본다.
+    if (PYTHON_SERVICE_URL) {
+      try {
+        const res = await fetch(`${PYTHON_SERVICE_URL}/load-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(30000),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          return NextResponse.json(data)
+        }
+      } catch {
+        // 외부 서비스가 잠시 죽어 있어도 직접 수집으로 바로 내려간다.
+      }
+    }
+
     const { start, end } = weekDateRange(Number(year), Number(month), Number(week_no))
     const wLabel = weekLabel(Number(year), Number(month), Number(week_no))
 
+    // 공시와 뉴스는 서로 독립적이라 병렬로 받아 시간을 줄인다.
     const [disclosures, newsResult] = await Promise.all([
       fetchDartDisclosures(corp_code, start, end, Number(disclosure_limit)),
       fetchNaverNews(
@@ -322,6 +352,7 @@ export async function POST(req: NextRequest) {
 
     const news = newsResult.items
 
+    // 화면에서는 소스가 섞인 타임라인이 필요해서 마지막에 한 번 합친다.
     const all: EventItem[] = [...disclosures, ...news].sort((a, b) =>
       b.occurred_at.localeCompare(a.occurred_at)
     )

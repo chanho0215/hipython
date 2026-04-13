@@ -15,6 +15,7 @@ const SOURCE_COLORS: Record<string, string> = {
 }
 
 export function EventCard({ item, compact = false }: Props) {
+  // 공시와 뉴스가 섞여 보여도 첫눈에 구분되도록 소스별 색을 다르게 둔다.
   const sourceStyle = SOURCE_COLORS[item.source] || "bg-muted text-muted-foreground border-border"
 
   return (

@@ -6,7 +6,7 @@ interface Props {
 }
 
 export function SummaryBar({ state }: Props) {
-  // Hide on welcome step
+  // welcome 화면은 도입 성격이라 작업 요약 바를 잠깐 숨긴다.
   if (state.step === "welcome") return null
 
   const { selectedCompany, selectedYear, selectedMonth, selectedWeekNo, weeklyBundle } = state
@@ -33,6 +33,7 @@ export function SummaryBar({ state }: Props) {
   ]
 
   return (
+    // 본문 위쪽에서 지금 선택된 맥락을 짧게 붙잡아 주는 역할을 한다.
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
       {items.map((item) => (
         <div

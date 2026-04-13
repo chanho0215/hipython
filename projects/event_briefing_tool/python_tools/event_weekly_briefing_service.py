@@ -31,6 +31,7 @@ from event_briefing_service_refined import (
 
 
 def _load_env() -> None:
+    # 이 모듈을 단독 실행하거나 Streamlit에서 불러올 때 모두 같은 .env를 찾게 한다.
     current = os.path.abspath(__file__)
     current_dir = os.path.dirname(current)
     candidates = [
@@ -46,6 +47,7 @@ def _load_env() -> None:
 _load_env()
 
 def _get_naver_credentials() -> tuple[str, str]:
+    # 환경변수를 다시 읽게 해 두면 런타임에 교체했을 때도 바로 반영된다.
     client_id = os.getenv("NAVER_CLIENT_ID", NAVER_CLIENT_ID or "").strip()
     client_secret = os.getenv("NAVER_CLIENT_SECRET", NAVER_CLIENT_SECRET or "").strip()
     return client_id, client_secret
@@ -68,6 +70,7 @@ def _normalize_pub_date(pub_date: str) -> str:
 
 
 def classify_news(title: str) -> str:
+    # 브리핑에서 단순 기사 나열 대신 묶어서 보려고 거친 분류를 먼저 붙인다.
     name = title or ""
     rules = [
         ("실적 기사", ["실적", "매출", "영업이익", "순이익"]),
@@ -86,6 +89,7 @@ def _build_news_queries(company_name: str, stock_code: str, start_date: date) ->
     month_token = f"{start_date.month}월"
     year_month_token = f"{start_date.year}년 {start_date.month}월"
     candidates = []
+    # 티커가 있는 종목은 회사명만 검색할 때보다 적중률이 훨씬 좋아서 앞쪽에 둔다.
     if stock_code:
         candidates.extend([
             f'"{company_name}" {stock_code}',
@@ -120,6 +124,7 @@ def fetch_naver_news_for_date_range(
     max_pages_per_query: int = 10,
 ) -> tuple[list[EventItem], dict[str, Any]]:
     client_id, client_secret = _get_naver_credentials()
+    # 디버그 정보는 "뉴스가 왜 비었는지" 나중에 확인할 때 꽤 유용하다.
     debug: dict[str, Any] = {
         "enabled": bool(client_id and client_secret),
         "attempts": [],
@@ -133,6 +138,7 @@ def fetch_naver_news_for_date_range(
     collected: list[EventItem] = []
     seen_keys: set[tuple[str, str]] = set()
 
+    # 과거 주차를 볼수록 기사량이 많아져서 페이지 수를 조금 늘려 잡는다.
     days_gap = max((date.today() - start_date).days, 0)
     adaptive_pages = max_pages_per_query if days_gap <= 7 else min(10, max_pages_per_query + min(days_gap // 7, 5))
 
@@ -179,6 +185,7 @@ def fetch_naver_news_for_date_range(
                 if not (start_date <= item_date <= end_date):
                     continue
                 key = (title, url)
+                # 같은 기사가 여러 검색어에서 반복되기 쉬워 제목+URL 기준으로 중복을 막는다.
                 if not title or key in seen_keys:
                     continue
                 seen_keys.add(key)
@@ -218,6 +225,7 @@ def fetch_naver_news_for_date_range(
                 break
             if not items:
                 break
+            # 날짜순 정렬이라 가장 오래된 기사가 범위를 벗어나면 다음 페이지는 볼 필요가 없다.
             if page_oldest and page_oldest < start_date:
                 break
             if page_start + 100 > 1000:
@@ -334,6 +342,7 @@ def _month_last_day(year: int, month: int) -> date:
 
 
 def month_week_date_range(year: int, month: int, week_no: int) -> tuple[date, date]:
+    # 월별 주차를 7일 단위로 끊는 현재 UI 규칙과 같은 계산을 사용한다.
     valid = valid_weeks_for_month(year, month)
     if week_no not in valid:
         raise ValueError("선택한 월에 없는 주차입니다.")
@@ -393,6 +402,7 @@ def fetch_company_events_for_month_week(
 ) -> dict[str, Any]:
     start_date, end_date = month_week_date_range(year, month, week_no)
 
+    # DART는 주차 범위만 딱 받는 API가 아니라, 넉넉히 받아 온 뒤 다시 자른다.
     days_back = max((date.today() - start_date).days + 10, 45)
     disclosures = fetch_disclosures(
         corp_code=corp_code,
@@ -410,6 +420,7 @@ def fetch_company_events_for_month_week(
     )
 
     disclosures = _filter_events_in_range(disclosures, start_date, end_date)
+    # 최종 화면에서는 소스가 섞인 타임라인이 필요해서 마지막에 합쳐 둔다.
     all_events = sorted(disclosures + news, key=lambda item: item.occurred_at, reverse=True)
 
     return {
@@ -450,6 +461,7 @@ def _overview_block(overview: dict[str, Any] | None) -> str:
 def _events_block(items: list[EventItem], empty_message: str) -> str:
     if not items:
         return empty_message
+    # 프롬프트에는 번호를 붙여 주는 편이 모델이 요점을 묶어서 읽기 쉽다.
     lines = []
     for idx, item in enumerate(items, start=1):
         lines.append(
@@ -480,6 +492,7 @@ def generate_weekly_briefing_structured(
     if not os.getenv("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY가 설정되어 있지 않습니다.")
 
+    # 화면 요약용 브리핑이라 모델 출력은 JSON으로 강하게 고정해 둔다.
     llm = ChatOpenAI(
         model=os.getenv("OPENAI_MODEL", "gpt-4o"),
         temperature=float(os.getenv("OPENAI_TEMPERATURE", "0.2")),
@@ -501,6 +514,7 @@ def generate_weekly_briefing_structured(
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError:
+        # 모델이 형식을 벗어나도 완전히 버리지 않고 텍스트라도 살려 둔다.
         payload = {
             "title": f"{company_name} {week_label} 브리핑",
             "week_label": week_label,
@@ -518,6 +532,7 @@ def generate_weekly_briefing_structured(
 
 
 def weekly_briefing_to_markdown(briefing: dict[str, Any]) -> str:
+    # 다운로드 파일은 별도 가공 없이 회의 자료로 넘길 수 있는 형태를 목표로 한다.
     sections = [
         ("핵심 이슈 TOP 3", briefing.get("top_themes", [])),
         ("공시 하이라이트", briefing.get("disclosure_highlights", [])),

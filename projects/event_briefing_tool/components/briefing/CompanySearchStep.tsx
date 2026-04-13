@@ -45,6 +45,7 @@ export function CompanySearchStep({ state, update, onNext }: Props) {
     setLoading(true)
     setFeedback(null)
     try {
+      // 검색 단계는 가능한 한 가볍게 두고, 결과와 피드백만 상태에 반영한다.
       const res = await fetch(`/api/search-companies?q=${encodeURIComponent(query)}`)
       const data = await res.json()
       const hits: CompanyHit[] = (data.hits || [])
@@ -68,6 +69,7 @@ export function CompanySearchStep({ state, update, onNext }: Props) {
   }
 
   const handleSelect = (hit: CompanyHit) => {
+    // 회사를 바꾸면 이후 단계 데이터는 다시 모아야 하므로 관련 상태를 같이 비운다.
     update({
       selectedCompany: hit,
       companyOverview: null,
@@ -91,7 +93,7 @@ export function CompanySearchStep({ state, update, onNext }: Props) {
         </p>
       </div>
 
-      {/* Search form */}
+      {/* 입력은 단순하지만, 버튼 상태와 메시지로 검색 서버 상태까지 같이 전달한다. */}
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -114,7 +116,7 @@ export function CompanySearchStep({ state, update, onNext }: Props) {
       {/* Feedback */}
       {feedback && <FeedbackBanner {...feedback} />}
 
-      {/* Results */}
+      {/* 결과 리스트는 선택과 확정 단계를 분리해서 실수 클릭을 조금 줄인다. */}
       {state.companyHits.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">검색 결과</div>

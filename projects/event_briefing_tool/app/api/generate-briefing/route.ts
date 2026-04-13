@@ -3,6 +3,7 @@ import type { EventItem, WeeklyBriefing } from "@/lib/types"
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || ""
 
+// 내려받기용 마크다운은 화면에서 보이는 섹션 순서와 최대한 맞춘다.
 function briefingToMarkdown(briefing: WeeklyBriefing): string {
   const lines: string[] = [
     `# ${briefing.title}`,
@@ -47,6 +48,7 @@ function generateFallbackBriefing(
   const discTitles = disclosures.slice(0, 3).map((d) => d.title)
   const newsTitles = news.slice(0, 3).map((n) => n.title)
 
+  // AI가 죽어도 최소한 회의용 텍스트는 남도록 단순한 구조화 결과를 만들어 둔다.
   return {
     title: `${companyName} 주간 공시·뉴스 브리핑`,
     week_label: wLabel,
@@ -81,6 +83,7 @@ async function generateWithOpenAI(
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY
   if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not set")
 
+  // 원문 전체를 넘기면 길이가 금방 커지므로, 화면에서 본 핵심 항목만 압축해서 보낸다.
   const discSummary = disclosures
     .slice(0, 20)
     .map((d) => `[공시] ${d.occurred_at} ${d.title}${d.snippet ? ": " + d.snippet : ""}`)
@@ -161,7 +164,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "company_name은 필수입니다." }, { status: 400 })
     }
 
-    // If an external Python service is configured, proxy to it
+    // 기존 Python 파이프라인을 계속 쓰고 싶을 때는 여기로 넘긴다.
     if (PYTHON_SERVICE_URL) {
       try {
         const res = await fetch(`${PYTHON_SERVICE_URL}/generate-briefing`, {
@@ -181,11 +184,10 @@ export async function POST(req: NextRequest) {
 
     let briefing: WeeklyBriefing
 
-    // Try OpenAI
+    // OpenAI 호출이 실패해도 응답 자체는 끊기지 않게 fallback을 바로 붙여 둔다.
     try {
       briefing = await generateWithOpenAI(company_name, stock_code, week_label, disclosures, news)
     } catch {
-      // Fallback to structured summary without AI
       briefing = generateFallbackBriefing(company_name, week_label, disclosures, news)
     }
 

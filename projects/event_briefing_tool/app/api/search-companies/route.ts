@@ -15,13 +15,14 @@ const DEMO_HITS = [
 ]
 
 const MEILI_URL = process.env.MEILISEARCH_URL || process.env.DEFAULT_MEILI_URL || "http://localhost:7700"
+// 운영에서는 search key를 쓰고, 로컬 정비할 때는 master key로도 붙을 수 있게 열어 둔다.
 const MEILI_KEY = process.env.MEILISEARCH_API_KEY || process.env.MEILISEARCH_MASTER_KEY || ""
 const COMPANY_INDEX = process.env.COMPANY_INDEX || process.env.MEILISEARCH_COMPANY_INDEX || "kr_companies"
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") || ""
 
-  // Try Meilisearch first
+  // 검색 UX는 인덱스 유무에 따라 체감이 크게 달라서, Meilisearch를 먼저 시도한다.
   try {
     const url = `${MEILI_URL}/indexes/${COMPANY_INDEX}/search`
     const res = await fetch(url, {
@@ -38,10 +39,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ hits: data.hits || [], source: "meilisearch" })
     }
   } catch {
-    // Fall through to demo data
+    // 검색 서버가 비어 있어도 첫 화면이 막히지 않게 데모 데이터로 내려간다.
   }
 
-  // Filter demo data by query
+  // 마지막 안전장치. 초기 세팅 중에도 검색 UI는 살아 있어야 한다.
   const lower = q.toLowerCase().trim()
   const hits = lower
     ? DEMO_HITS.filter(

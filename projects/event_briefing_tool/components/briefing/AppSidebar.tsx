@@ -19,7 +19,7 @@ interface Props {
 
 export function AppSidebar({ state, onNavigate, onReset }: Props) {
   const { step, selectedCompany, selectedYear, selectedMonth, selectedWeekNo } = state
-  // welcome step is before the nav items, so currentStepIdx will be -1
+  // welcome 단계는 실제 작업 흐름 앞에 있는 도입 화면이라 내비게이션 인덱스 밖에 둔다.
   const currentStepIdx = NAV_ITEMS.findIndex((n) => n.key === step)
 
   return (
@@ -30,7 +30,7 @@ export function AppSidebar({ state, onNavigate, onReset }: Props) {
         <div className="mt-1 text-sm font-semibold text-sidebar-primary">공시·뉴스 분석기</div>
       </div>
 
-      {/* Navigation */}
+      {/* 실제 업무 단계는 세 개뿐이라, 사이드바에서는 여기만 빠르게 오갈 수 있게 둔다. */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5">
         <div className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-widest px-2 mb-2">
           분석 단계
@@ -72,7 +72,7 @@ export function AppSidebar({ state, onNavigate, onReset }: Props) {
         })}
       </nav>
 
-      {/* Current selection info */}
+      {/* 오른쪽 본문을 보다가도 현재 선택 맥락을 놓치지 않게 요약을 붙인다. */}
       <div className="px-4 py-4 border-t border-sidebar-border space-y-2">
         <div className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-widest mb-2">
           현재 선택
@@ -99,7 +99,7 @@ export function AppSidebar({ state, onNavigate, onReset }: Props) {
         </div>
       </div>
 
-      {/* Reset */}
+      {/* 실험용 도구라 초기화 버튼은 눈에 잘 띄지 않되 언제든 누를 수 있게 둔다. */}
       <div className="px-3 pb-4">
         <button
           onClick={onReset}

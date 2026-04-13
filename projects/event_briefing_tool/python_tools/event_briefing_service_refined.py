@@ -29,6 +29,7 @@ CACHE_PATH = ROOT / "kr_companies_cache.json"
 
 
 def _load_env() -> None:
+    # 프로젝트를 여러 위치에서 실행해도 .env를 찾을 수 있게 상위 폴더까지 같이 본다.
     current = Path(__file__).resolve()
     for candidate in (
         current.parent / ".env",
@@ -59,6 +60,7 @@ class CompanyHit:
 
     @property
     def label(self) -> str:
+        # 검색 결과에서 바로 읽기 좋게 회사명 / 티커 / 시장을 한 줄로 붙여 둔다.
         market = {"Y": "KOSPI", "K": "KOSDAQ", "N": "KONEX", "E": "기타"}.get(self.corp_cls, self.corp_cls or "-")
         stock = self.stock_code or "비상장"
         return f"{self.corp_name} | {stock} | {market}"
@@ -146,6 +148,7 @@ def _safe_json(data: Any) -> str:
 
 
 def _load_local_cache() -> list[dict[str, str]]:
+    # 인덱스가 아직 없을 때도 최소한 회사 검색은 되게 하려는 fallback이다.
     if CACHE_PATH.exists():
         return json.loads(CACHE_PATH.read_text(encoding="utf-8"))
     return []
@@ -176,6 +179,7 @@ def search_companies(query: str, limit: int = 10) -> dict[str, Any]:
     if Client is not None:
         try:
             client = Client(DEFAULT_MEILI_URL, DEFAULT_MEILI_KEY)
+            # 회사 검색은 완전한 문장보다 짧은 키워드가 많아서 검색 대상 필드를 명시해 둔다.
             result = client.index(DEFAULT_COMPANY_INDEX).search(
                 query,
                 {
@@ -239,6 +243,7 @@ def _require_dart_key() -> str:
 
 def download_corp_codes() -> list[dict[str, str]]:
     key = _require_dart_key()
+    # 운영에서는 보통 상장사만 쓰기 때문에 기본값은 listed only로 둔다.
     listed_only = os.getenv("DART_LISTED_ONLY", "true").strip().lower() not in {"0", "false", "no"}
     response = requests.get(
         "https://opendart.fss.or.kr/api/corpCode.xml",
@@ -270,7 +275,7 @@ def download_corp_codes() -> list[dict[str, str]]:
                 "corp_cls": corp_cls,
             }
         )
-    # Keep the cache compact so it can be uploaded to hosts with strict file-size limits.
+    # 배포 환경에서 파일 크기 제한에 걸리지 않도록 캐시는 압축된 형태로 남긴다.
     CACHE_PATH.write_text(json.dumps(documents, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return documents
 

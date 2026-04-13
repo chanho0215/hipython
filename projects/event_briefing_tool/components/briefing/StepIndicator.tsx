@@ -12,12 +12,13 @@ interface Props {
 }
 
 export function StepIndicator({ current }: Props) {
-  // Hide on welcome step
+  // welcome 단계는 안내 화면이라 진행 표시에서 제외한다.
   if (current === "welcome") return null
 
   const currentIdx = STEPS.findIndex((s) => s.key === current)
 
   return (
+    // 단계 수가 적어서 타임라인보다 얇은 스텝 바가 더 읽기 편하다.
     <div className="flex items-center gap-0 mb-6">
       {STEPS.map((step, idx) => {
         const isActive = idx === currentIdx

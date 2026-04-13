@@ -16,6 +16,7 @@ from event_briefing_service_refined import (
 
 
 def _load_env() -> None:
+    # 단독 실행 스크립트라 현재 폴더 기준으로 .env를 찾는 편이 편하다.
     current = Path(__file__).resolve()
     for candidate in (
         current.parent / ".env",
@@ -36,10 +37,11 @@ def main() -> None:
     client = Client(os.getenv("MEILISEARCH_URL", DEFAULT_MEILI_URL), meili_key)
     index = client.index(index_name)
     try:
-        # Rebuilding from scratch keeps stale company rows from hanging around after updates.
+        # 인덱스를 통째로 다시 채우는 방식이라 예전 문서는 먼저 비운다.
         index.delete_all_documents()
     except Exception:
         pass
+    # 회사 검색은 이름/티커/고유코드 세 축만 잘 잡히면 충분하다.
     index.update_searchable_attributes(["corp_name", "stock_code", "corp_code"])
     index.update_filterable_attributes(["corp_cls", "stock_code"])
     task = index.add_documents(docs, primary_key="corp_code")
