@@ -239,6 +239,7 @@ def _require_dart_key() -> str:
 
 def download_corp_codes() -> list[dict[str, str]]:
     key = _require_dart_key()
+    listed_only = os.getenv("DART_LISTED_ONLY", "true").strip().lower() not in {"0", "false", "no"}
     response = requests.get(
         "https://opendart.fss.or.kr/api/corpCode.xml",
         params={"crtfc_key": key},
@@ -257,6 +258,8 @@ def download_corp_codes() -> list[dict[str, str]]:
         corp_name = (item.findtext("corp_name") or "").strip()
         modify_date = (item.findtext("modify_date") or "").strip()
         if not corp_name:
+            continue
+        if listed_only and not stock_code:
             continue
         corp_cls = "Y" if stock_code else "E"
         documents.append(
